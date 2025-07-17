@@ -149,42 +149,153 @@
 
     .scan-box {
       position: absolute;
-      top: 40%;
-      left: 15%;
-      width: 70%;
-      height: 70px;
-      border: 3px solid #00ff00;
-      border-radius: 10px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 250px;
+      height: 250px;
+      border: none;
+      border-radius: 20px;
       z-index: 1002;
-      box-shadow: 0 0 0 4000px rgba(0,0,0,0.6);
+      box-shadow: 0 0 0 4000px rgba(0,0,0,0.7);
     }
 
-    .scan-line {
+    .scan-corners {
       position: absolute;
-      top: 40%;
-      left: 15%;
-      width: 70%;
-      height: 2px;
-      background: linear-gradient(to right, transparent, #00ff00, transparent);
-      animation: scan-move 2s infinite;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 250px;
+      height: 250px;
       z-index: 1003;
     }
 
-    @keyframes scan-move {
-      0% { top: 40%; }
-      50% { top: 46%; }
-      100% { top: 40%; }
+    .corner {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      border: 4px solid #00ff00;
+      border-radius: 8px;
+    }
+
+    .corner::before {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border: 2px solid #00ff00;
+      border-radius: 4px;
+      opacity: 0.6;
+      animation: corner-pulse 2s infinite;
+    }
+
+    .corner.top-left {
+      top: -4px;
+      left: -4px;
+      border-right: none;
+      border-bottom: none;
+    }
+
+    .corner.top-right {
+      top: -4px;
+      right: -4px;
+      border-left: none;
+      border-bottom: none;
+    }
+
+    .corner.bottom-left {
+      bottom: -4px;
+      left: -4px;
+      border-right: none;
+      border-top: none;
+    }
+
+    .corner.bottom-right {
+      bottom: -4px;
+      right: -4px;
+      border-left: none;
+      border-top: none;
+    }
+
+    .scan-grid {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 200px;
+      height: 200px;
+      opacity: 0.3;
+      z-index: 1004;
+    }
+
+    .grid-line {
+      position: absolute;
+      background: #00ff00;
+    }
+
+    .grid-line.horizontal {
+      width: 100%;
+      height: 1px;
+    }
+
+    .grid-line.vertical {
+      height: 100%;
+      width: 1px;
+    }
+
+    .grid-line:nth-child(1) { top: 25%; }
+    .grid-line:nth-child(2) { top: 50%; }
+    .grid-line:nth-child(3) { top: 75%; }
+    .grid-line:nth-child(4) { left: 25%; }
+    .grid-line:nth-child(5) { left: 50%; }
+    .grid-line:nth-child(6) { left: 75%; }
+
+    .scan-line {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 220px;
+      height: 2px;
+      background: linear-gradient(to right, transparent, #00ff00, transparent);
+      animation: qr-scan-move 3s infinite;
+      z-index: 1005;
+    }
+
+    @keyframes qr-scan-move {
+      0% { top: calc(50% - 110px); opacity: 0.8; }
+      50% { top: 50%; opacity: 1; }
+      100% { top: calc(50% + 110px); opacity: 0.8; }
+    }
+
+    @keyframes corner-pulse {
+      0% { opacity: 0.6; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.1); }
+      100% { opacity: 0.6; transform: scale(1); }
     }
 
     .scan-guide-text {
       position: absolute;
-      top: 33%;
+      top: 25%;
       width: 100%;
       text-align: center;
       color: #fff;
-      font-size: 16px;
+      font-size: 18px;
       font-weight: 500;
       z-index: 1004;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    }
+
+    .scan-status {
+      position: absolute;
+      bottom: 25%;
+      width: 100%;
+      text-align: center;
+      color: #00ff00;
+      font-size: 16px;
+      font-weight: 400;
+      z-index: 1004;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
     }
 
     input[type="number"]::-webkit-inner-spin-button {
@@ -235,9 +346,24 @@
       <div class="scanner-footer">
         <button class="btn-close-scanner" onclick="stopScanner()">✕</button>
       </div>
-      <div class="scan-guide-text">เล็ง QR Code ให้อยู่ในกรอบสี่เหลี่ยม</div>
+      <div class="scan-guide-text">วาง QR Code ในกรอบสี่เหลี่ยม</div>
       <div class="scan-box"></div>
+      <div class="scan-corners">
+        <div class="corner top-left"></div>
+        <div class="corner top-right"></div>
+        <div class="corner bottom-left"></div>
+        <div class="corner bottom-right"></div>
+      </div>
+      <div class="scan-grid">
+        <div class="grid-line horizontal"></div>
+        <div class="grid-line horizontal"></div>
+        <div class="grid-line horizontal"></div>
+        <div class="grid-line vertical"></div>
+        <div class="grid-line vertical"></div>
+        <div class="grid-line vertical"></div>
+      </div>
       <div class="scan-line"></div>
+      <div class="scan-status">📱 กำลังค้นหา QR Code...</div>
     </div>
   </div>
 
