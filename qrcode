@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📦 บันทึก Inventory TAG</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+  <style>
+    :root {
+      --primary-color: #2563eb;
+      --accent-color: #059669;
+      --accent-hover: #047857;
+      --success-color: #10b981;
+      --error-color: #dc2626;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --border-color: #e2e8f0;
+      --background: #f8fafc;
+      --surface: #ffffff;
+      --radius-lg: 0.75rem;
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    .container { width: 100%; max-width: 480px; }
+
+    .card {
+      background: var(--surface);
+      padding: 32px 24px;
+      border-radius: 1rem;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .header h2 {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      margin-bottom: 8px;
+      font-weight: 600;
+      display: block;
+    }
+
+    .barcode-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .form-control {
+      padding: 14px 16px;
+      width: 100%;
+      font-size: 16px;
+      border: 1.5px solid var(--border-color);
+      border-radius: var(--radius-lg);
+    }
+
+    button {
+      border: none;
+      border-radius: var(--radius-lg);
+      padding: 14px 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-primary {
+      width: 100%;
+      background: var(--primary-color);
+      color: white;
+      margin-top: 16px;
+    }
+
+    .btn-scanner {
+      background: var(--accent-color);
+      color: white;
+      font-size: 20px;
+      min-width: 60px;
+    }
+
+    .btn-scanner:hover {
+      background: var(--accent-hover);
+    }
+
+    #scanner-view {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #000;
+      z-index: 1000;
+    }
+
+    #scanner-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .scanner-ui {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      z-index: 1001;
+    }
+
+    .scanner-header, .scanner-footer {
+      padding: 20px;
+      color: white;
+      text-align: center;
+      background: rgba(0,0,0,0.5);
+    }
+
+    .btn-close-scanner {
+      background: rgba(220,38,38,0.9);
+      color: white;
+      border-radius: 50%;
+      width: 56px;
+      height: 56px;
+      font-size: 24px;
+    }
+
+    .scan-box {
+      position: absolute;
+      top: 40%;
+      left: 15%;
+      width: 70%;
+      height: 70px;
+      border: 3px solid #00ff00;
+      border-radius: 10px;
+      z-index: 1002;
+      box-shadow: 0 0 0 4000px rgba(0,0,0,0.6);
+    }
+
+    .scan-line {
+      position: absolute;
+      top: 40%;
+      left: 15%;
+      width: 70%;
+      height: 2px;
+      background: linear-gradient(to right, transparent, #00ff00, transparent);
+      animation: scan-move 2s infinite;
+      z-index: 1003;
+    }
+
+    @keyframes scan-move {
+      0% { top: 40%; }
+      50% { top: 46%; }
+      100% { top: 40%; }
+    }
+
+    .scan-guide-text {
+      position: absolute;
+      top: 33%;
+      width: 100%;
+      text-align: center;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 500;
+      z-index: 1004;
+    }
+
+    input[type="number"]::-webkit-inner-spin-button {
+      display: none;
+    }
+
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card" id="main-view">
+      <div class="header">
+        <h2>📦 บันทึก Inventory TAG</h2>
+      </div>
+      <div class="form-group">
+        <label class="form-label">รหัส QR Code</label>
+        <div class="barcode-row">
+          <input type="text" id="barcode" class="form-control" placeholder="สแกน QR Code เพื่อใส่รหัส" readonly>
+          <button class="btn-scanner" onclick="startScanner()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zM13 13h2v2h-2v-2zM15 15h2v2h-2v-2zM13 17h2v2h-2v-2zM15 19h2v2h-2v-2zM17 13h2v2h-2v-2zM19 15h2v2h-2v-2zM17 17h2v2h-2v-2zM19 19h2v2h-2v-2z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">จำนวน</label>
+        <input type="number" id="quantity" inputmode="numeric" class="form-control" placeholder="ระบุจำนวน">
+      </div>
+      <div class="form-group">
+        <label class="form-label">ชื่อผู้สแกน</label>
+        <input type="text" id="scanner" class="form-control" placeholder="ชื่อผู้สแกน">
+      </div>
+      <button class="btn-primary" onclick="submitBarcode()">💾 บันทึกข้อมูล</button>
+    </div>
+  </div>
+
+  <!-- Scanner View -->
+  <div id="scanner-view">
+    <div id="scanner-container"></div>
+    <div class="scanner-ui">
+      <div class="scanner-header">
+        <h3>กำลังสแกน QR Code</h3>
+      </div>
+      <div class="scanner-footer">
+        <button class="btn-close-scanner" onclick="stopScanner()">✕</button>
+      </div>
+      <div class="scan-guide-text">เล็ง QR Code ให้อยู่ในกรอบสี่เหลี่ยม</div>
+      <div class="scan-box"></div>
+      <div class="scan-line"></div>
+    </div>
+  </div>
+
+  <audio id="beep" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" preload="auto"></audio>
+
+  <script>
+    const apiURL = "https://script.google.com/macros/s/AKfycbwQ5E0eX2RQ_VwK6HBN6E10LNoZCKlUBFZxvT23VEu5k66EZV74Kel7KGssxJ-8SSsv/exec";
+
+    async function submitBarcode() {
+      const barcode = document.getElementById("barcode").value.trim();
+      const quantity = document.getElementById("quantity").value.trim();
+      const scanner = document.getElementById("scanner").value.trim();
+
+      if (!barcode || !quantity || !scanner) {
+        alert("❌ กรุณากรอกข้อมูลให้ครบ");
+        return;
+      }
+
+      try {
+        const res = await fetch(`${apiURL}?page=submitBarcode&barcode=${barcode}&quantity=${quantity}&scanner=${scanner}`, { method: "POST" });
+        const data = await res.json();
+
+        if (data.success) {
+          alert("✅ " + data.message);
+          document.getElementById("barcode").value = "";
+          document.getElementById("quantity").value = "";
+          document.getElementById("scanner").value = "";
+        } else {
+          alert("❌ " + data.message);
+        }
+      } catch (err) {
+        alert("❌ ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์");
+        console.error(err);
+      }
+    }
+
+    function startScanner() {
+      document.getElementById("main-view").style.display = "none";
+      document.getElementById("scanner-view").style.display = "block";
+
+      Quagga.init({
+        inputStream: {
+          name: "Live",
+          type: "LiveStream",
+          target: document.querySelector('#scanner-container'),
+          constraints: {
+            facingMode: "environment",
+            width: { ideal: 640 },
+            height: { ideal: 480 }
+          }
+        },
+        decoder: {
+          readers: ["qr_reader"]
+        },
+        locate: true,
+        locator: {
+          patchSize: "large",
+          halfSample: false
+        },
+        numOfWorkers: 4
+      }, function(err) {
+        if (err) {
+          console.error(err);
+          alert("❌ ไม่สามารถเปิดกล้องได้");
+          stopScanner();
+          return;
+        }
+        Quagga.start();
+      });
+
+      Quagga.onDetected(function(result) {
+        const code = result.codeResult.code;
+        if (code) {
+          document.getElementById("barcode").value = code;
+          document.getElementById("beep").play();
+          stopScanner();
+        }
+      });
+    }
+
+    function stopScanner() {
+      Quagga.stop();
+      document.getElementById("scanner-view").style.display = "none";
+      document.getElementById("main-view").style.display = "block";
+      Quagga.offDetected();
+    }
+  </script>
+</body>
+</html>
