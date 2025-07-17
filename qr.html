@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>📦 บันทึก Inventory TAG</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
     :root {
       --primary-color: #2563eb;
@@ -388,24 +389,61 @@
       const scanner = document.getElementById("scanner").value.trim();
 
       if (!barcode || !quantity || !scanner) {
-        alert("❌ กรุณากรอกข้อมูลให้ครบ");
+        Swal.fire({
+          icon: "error",
+          title: "กรอกข้อมูลไม่ครบ",
+          text: "กรุณากรอกข้อมูลให้ครบทุกช่อง",
+        });
         return;
       }
 
+      if (isNaN(quantity) || Number(quantity) <= 0) {
+        Swal.fire({
+          icon: "warning",
+          title: "จำนวนไม่ถูกต้อง",
+          text: "กรุณากรอกจำนวนเป็นตัวเลขที่มากกว่า 0",
+        });
+        return;
+      }
+
+      Swal.fire({
+        title: "กำลังบันทึกข้อมูล...",
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+      });
+
       try {
-        const res = await fetch(`${apiURL}?page=submitBarcode&barcode=${barcode}&quantity=${quantity}&scanner=${scanner}`, { method: "POST" });
+        const res = await fetch(`${apiURL}?page=submitBarcode&barcode=${barcode}&quantity=${quantity}&scanner=${scanner}`, {
+          method: "POST",
+        });
         const data = await res.json();
 
         if (data.success) {
-          alert("✅ " + data.message);
+          Swal.fire({
+            icon: "success",
+            title: "✅ บันทึกสำเร็จ",
+            text: data.message,
+            timer: 2000,
+            showConfirmButton: false,
+          });
           document.getElementById("barcode").value = "";
           document.getElementById("quantity").value = "";
           document.getElementById("scanner").value = "";
         } else {
-          alert("❌ " + data.message);
+          Swal.fire({
+            icon: "error",
+            title: "เกิดข้อผิดพลาด",
+            text: data.message,
+          });
         }
       } catch (err) {
-        alert("❌ ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์");
+        Swal.fire({
+          icon: "error",
+          title: "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์",
+          text: "กรุณาลองใหม่อีกครั้ง",
+        });
         console.error(err);
       }
     }
@@ -430,17 +468,20 @@
         { facingMode: "environment" }, 
         config, 
         (decodedText, decodedResult) => {
-          // Success callback
           document.getElementById("barcode").value = decodedText;
           document.getElementById("beep").play();
           stopScanner();
         },
         (errorMessage) => {
-          // Error callback - จะเรียกบ่อยๆ ไม่ต้องทำอะไร
+          // error callback
         }
       ).catch((err) => {
         console.error("Error starting scanner:", err);
-        alert("❌ ไม่สามารถเปิดกล้องได้");
+        Swal.fire({
+          icon: "error",
+          title: "❌ ไม่สามารถเปิดกล้องได้",
+          text: err.message
+        });
         stopScanner();
       });
     }
