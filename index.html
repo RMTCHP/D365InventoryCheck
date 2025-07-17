@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>📦 บันทึก Inventory TAG</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
     :root {
       --primary-color: #2563eb;
@@ -206,7 +207,12 @@
         <label class="form-label">รหัสบาร์โค้ด</label>
         <div class="barcode-row">
           <input type="text" id="barcode" class="form-control" placeholder="สแกนเพื่อใส่รหัส" readonly>
-          <button class="btn-scanner" onclick="startScanner()">🔍</button>
+          <button class="btn-scanner" onclick="startScanner()">
+            <!-- ✅ เปลี่ยน icon เป็น 1D Barcode -->
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M2 4h2v16H2V4zm3 0h1v16H5V4zm2 0h2v16H7V4zm3 0h1v16h-1V4zm2 0h3v16h-3V4zm4 0h1v16h-1V4zm2 0h2v16h-2V4z"/>
+            </svg>
+          </button>
         </div>
       </div>
       <div class="form-group">
@@ -248,24 +254,77 @@
       const scanner = document.getElementById("scanner").value.trim();
 
       if (!barcode || !quantity || !scanner) {
-        alert("❌ กรุณากรอกข้อมูลให้ครบ");
+        Swal.fire({
+          icon: "error",
+          title: "กรอกข้อมูลไม่ครบ",
+          text: "กรุณากรอกข้อมูลให้ครบทุกช่อง",
+        });
         return;
       }
 
+      if (isNaN(quantity) || Number(quantity) <= 0) {
+        Swal.fire({
+          icon: "warning",
+          title: "จำนวนไม่ถูกต้อง",
+          text: "กรุณาระบุจำนวนมากกว่า 0",
+        });
+        return;
+      }
+
+      const confirm = await Swal.fire({
+        title: "ยืนยันข้อมูลก่อนบันทึก",
+        html: `
+          <p><strong>📦 Barcode:</strong> ${barcode}</p>
+          <p><strong>🔢 จำนวน:</strong> ${quantity}</p>
+          <p><strong>👤 ผู้สแกน:</strong> ${scanner}</p>
+        `,
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "✅ ยืนยัน",
+        cancelButtonText: "❌ ยกเลิก",
+        reverseButtons: true
+      });
+
+      if (!confirm.isConfirmed) return;
+
+      Swal.fire({
+        title: "กำลังบันทึกข้อมูล...",
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+      });
+
       try {
-        const res = await fetch(`${apiURL}?page=submitBarcode&barcode=${barcode}&quantity=${quantity}&scanner=${scanner}`, { method: "POST" });
+        const res = await fetch(`${apiURL}?page=submitBarcode&barcode=${barcode}&quantity=${quantity}&scanner=${scanner}`, {
+          method: "POST",
+        });
         const data = await res.json();
 
         if (data.success) {
-          alert("✅ " + data.message);
+          Swal.fire({
+            icon: "success",
+            title: "✅ บันทึกสำเร็จ",
+            text: data.message,
+            timer: 2000,
+            showConfirmButton: false,
+          });
           document.getElementById("barcode").value = "";
           document.getElementById("quantity").value = "";
           document.getElementById("scanner").value = "";
         } else {
-          alert("❌ " + data.message);
+          Swal.fire({
+            icon: "error",
+            title: "เกิดข้อผิดพลาด",
+            text: data.message,
+          });
         }
       } catch (err) {
-        alert("❌ ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์");
+        Swal.fire({
+          icon: "error",
+          title: "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์",
+          text: "กรุณาลองใหม่อีกครั้ง",
+        });
         console.error(err);
       }
     }
@@ -297,6 +356,8 @@
       }, function(err) {
         if (err) {
           console.error(err);
+          Swal.fire("ไม่สามารถเปิดกล้องได้", err.message, "error");
+          stopScanner();
           return;
         }
         Quagga.start();
