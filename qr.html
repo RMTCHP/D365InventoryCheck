@@ -384,69 +384,89 @@
     let html5QrcodeScanner;
 
     async function submitBarcode() {
-      const barcode = document.getElementById("barcode").value.trim();
-      const quantity = document.getElementById("quantity").value.trim();
-      const scanner = document.getElementById("scanner").value.trim();
+  const barcode = document.getElementById("barcode").value.trim();
+  const quantity = document.getElementById("quantity").value.trim();
+  const scanner = document.getElementById("scanner").value.trim();
 
-      if (!barcode || !quantity || !scanner) {
-        Swal.fire({
-          icon: "error",
-          title: "กรอกข้อมูลไม่ครบ",
-          text: "กรุณากรอกข้อมูลให้ครบทุกช่อง",
-        });
-        return;
-      }
+  if (!barcode || !quantity || !scanner) {
+    Swal.fire({
+      icon: "error",
+      title: "กรอกข้อมูลไม่ครบ",
+      text: "กรุณากรอกข้อมูลให้ครบทุกช่อง",
+    });
+    return;
+  }
 
-      if (isNaN(quantity) || Number(quantity) <= 0) {
-        Swal.fire({
-          icon: "warning",
-          title: "จำนวนไม่ถูกต้อง",
-          text: "กรุณากรอกจำนวนเป็นตัวเลขที่มากกว่า 0",
-        });
-        return;
-      }
+  if (isNaN(quantity) || Number(quantity) <= 0) {
+    Swal.fire({
+      icon: "warning",
+      title: "จำนวนไม่ถูกต้อง",
+      text: "กรุณากรอกจำนวนเป็นตัวเลขที่มากกว่า 0",
+    });
+    return;
+  }
 
+  // 🔽 หน้าต่างยืนยันก่อนส่ง
+  const confirmResult = await Swal.fire({
+    title: "ยืนยันข้อมูลก่อนบันทึก",
+    html: `
+      <p><strong>📦 Barcode:</strong> ${barcode}</p>
+      <p><strong>🔢 จำนวน:</strong> ${quantity}</p>
+      <p><strong>👤 ผู้สแกน:</strong> ${scanner}</p>
+    `,
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonText: "✅ ยืนยัน",
+    cancelButtonText: "❌ ยกเลิก",
+    reverseButtons: true
+  });
+
+  if (!confirmResult.isConfirmed) {
+    return;
+  }
+
+  // 🔄 แสดงโหลด
+  Swal.fire({
+    title: "กำลังบันทึกข้อมูล...",
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+    },
+  });
+
+  try {
+    const res = await fetch(`${apiURL}?page=submitBarcode&barcode=${barcode}&quantity=${quantity}&scanner=${scanner}`, {
+      method: "POST",
+    });
+    const data = await res.json();
+
+    if (data.success) {
       Swal.fire({
-        title: "กำลังบันทึกข้อมูล...",
-        allowOutsideClick: false,
-        didOpen: () => {
-          Swal.showLoading();
-        },
+        icon: "success",
+        title: "✅ บันทึกสำเร็จ",
+        text: data.message,
+        timer: 2000,
+        showConfirmButton: false,
       });
-
-      try {
-        const res = await fetch(`${apiURL}?page=submitBarcode&barcode=${barcode}&quantity=${quantity}&scanner=${scanner}`, {
-          method: "POST",
-        });
-        const data = await res.json();
-
-        if (data.success) {
-          Swal.fire({
-            icon: "success",
-            title: "✅ บันทึกสำเร็จ",
-            text: data.message,
-            timer: 2000,
-            showConfirmButton: false,
-          });
-          document.getElementById("barcode").value = "";
-          document.getElementById("quantity").value = "";
-          document.getElementById("scanner").value = "";
-        } else {
-          Swal.fire({
-            icon: "error",
-            title: "เกิดข้อผิดพลาด",
-            text: data.message,
-          });
-        }
-      } catch (err) {
-        Swal.fire({
-          icon: "error",
-          title: "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์",
-          text: "กรุณาลองใหม่อีกครั้ง",
-        });
-        console.error(err);
-      }
+      document.getElementById("barcode").value = "";
+      document.getElementById("quantity").value = "";
+      document.getElementById("scanner").value = "";
+    } else {
+      Swal.fire({
+        icon: "error",
+        title: "เกิดข้อผิดพลาด",
+        text: data.message,
+      });
     }
+  } catch (err) {
+    Swal.fire({
+      icon: "error",
+      title: "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์",
+      text: "กรุณาลองใหม่อีกครั้ง",
+    });
+    console.error(err);
+  }
+}
 
     function startScanner() {
       document.getElementById("main-view").style.display = "none";
