@@ -386,7 +386,6 @@
     async function submitBarcode() {
   const barcode = document.getElementById("barcode").value.trim();
   const quantity = document.getElementById("quantity").value.trim();
-  const scanner = document.getElementById("scanner").value.trim();
 
   if (!barcode || !quantity || !scanner) {
     Swal.fire({
