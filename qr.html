@@ -321,7 +321,7 @@
   <div class="container">
     <div class="card" id="main-view">
       <div class="header">
-        <h2>📦 Inventory TAG App</h2>
+        <h2>📦 RMT Inventory TAG</h2>
       </div>
       <div class="form-group">
         <label class="form-label">รหัส QR Code</label>
@@ -335,9 +335,44 @@
         </div>
       </div>
       <div class="form-group">
+<!-- 🔽 กระบวนการหลัก -->
+<div class="form-group">
+  <label class="form-label">กระบวนการหลัก</label>
+  <select id="mainProcess" class="form-control" onchange="handleMainProcessChange()">
+    <option value="">-- เลือกกระบวนการหลัก --</option>
+    <option value="ผสมผง">ผสมผง</option>
+    <option value="Compact">Compact</option>
+    <option value="Sinter & Steam">Sinter & Steam</option>
+    <option value="Finishing">Finishing</option>
+    <option value="Machining">Machining</option>
+    <option value="Sub Store">Sub Store</option>
+    <option value="Magna flux">Magna flux</option>
+    <option value="Sort">Sort</option>
+    <option value="Pack">Pack</option>
+    <option value="Rework">Rework</option>
+  </select>
+</div>
+
+<!-- 🔽 กระบวนการย่อย -->
+<div class="form-group">
+  <label class="form-label">กระบวนการย่อย</label>
+  <select id="subProcess" class="form-control">
+    <option value="">-- เลือกกระบวนการย่อย --</option>
+  </select>
+</div>
+        <!-- 🔽 เลือกสถานะ -->
+        <div class="form-group">
+  <label for="status" class="form-label">สถานะ</label>
+  <select id="status" class="form-control">
+  <option value="">-- เลือกสถานะ --</option>
+</select>
+</div>
+
         <label class="form-label">จำนวน</label>
         <input type="number" id="quantity" inputmode="numeric" class="form-control" placeholder="ระบุจำนวน">
       </div>
+
+      
       <div class="form-group">
         <label class="form-label">ชื่อผู้สแกน</label>
         <input type="text" id="scanner" class="form-control" placeholder="ชื่อผู้สแกน">
@@ -383,88 +418,113 @@
   <audio id="beep" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" preload="auto"></audio>
 
   <script>
-  const apiURL = "https://script.google.com/macros/s/AKfycbwQ5E0eX2RQ_VwK6HBN6E10LNoZCKlUBFZxvT23VEu5k66EZV74Kel7KGssxJ-8SSsv/exec";
+  const apiURL = "https://script.google.com/macros/s/AKfycbwv3h5myYLxn4cermsajkeOr6AL3a_-vyYzJNGJNkyRU-HV2eulbot0O3vO5XGPYUot/exec";
   let html5QrcodeScanner;
 
   async function submitBarcode() {
-    const barcode = document.getElementById("barcode").value.trim();
-    const quantity = document.getElementById("quantity").value.trim();
-    const scanner = document.getElementById("scanner").value.trim();
+  const barcode = document.getElementById("barcode").value.trim();
+  const quantity = document.getElementById("quantity").value.trim();
+  const scanner = document.getElementById("scanner").value.trim();
+  const mainProcess = document.getElementById("mainProcess").value.trim();
+  const subProcess = document.getElementById("subProcess").value.trim();
+  const status = document.getElementById("status").value.trim();
 
-    if (!barcode || !quantity || !scanner) {
-      Swal.fire({
-        icon: "error",
-        title: "กรอกข้อมูลไม่ครบ",
-        text: "กรุณากรอกข้อมูลให้ครบทุกช่อง",
-      });
-      return;
-    }
-
-    if (isNaN(quantity) || Number(quantity) <= 0) {
-      Swal.fire({
-        icon: "warning",
-        title: "จำนวนไม่ถูกต้อง",
-        text: "กรุณากรอกจำนวนเป็นตัวเลขที่มากกว่า 0",
-      });
-      return;
-    }
-
-    const confirmResult = await Swal.fire({
-      title: "ยืนยันข้อมูลก่อนบันทึก",
-      html: `
-        <p><strong>📦 Barcode:</strong> ${barcode}</p>
-        <p><strong>🔢 จำนวน:</strong> ${quantity}</p>
-        <p><strong>👤 ผู้สแกน:</strong> ${scanner}</p>
-      `,
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonText: "✅ ยืนยัน",
-      cancelButtonText: "❌ ยกเลิก",
-    });
-
-    if (!confirmResult.isConfirmed) {
-      return;
-    }
-
+  // ✅ ตรวจสอบให้ครบทุกช่องที่จำเป็น
+  if (!barcode || !quantity || !scanner || !mainProcess || !subProcess || !status) {
     Swal.fire({
-      title: "กำลังบันทึกข้อมูล...",
-      allowOutsideClick: false,
-      didOpen: () => {
-        Swal.showLoading();
-      },
+      icon: "error",
+      title: "กรอกข้อมูลไม่ครบ",
+      text: "กรุณากรอกข้อมูลให้ครบทุกช่อง",
     });
+    return;
+  }
 
-    try {
-      const res = await fetch(`${apiURL}?page=submitBarcode&barcode=${barcode}&quantity=${quantity}&scanner=${scanner}`, {
-        method: "POST",
+  // ✅ ตรวจสอบว่า quantity เป็นตัวเลขและมากกว่า 0
+  if (isNaN(quantity) || Number(quantity) <= 0) {
+    Swal.fire({
+      icon: "warning",
+      title: "จำนวนไม่ถูกต้อง",
+      text: "กรุณากรอกจำนวนเป็นตัวเลขที่มากกว่า 0",
+    });
+    return;
+  }
+
+  // ✅ ดึงชื่อเต็มของ subProcess
+  const subProcessText = document.querySelector('#subProcess option:checked')?.textContent || '-';
+  const mainProcessText = mainProcess || '-';
+  const statusText = status || '-';
+
+  const confirmResult = await Swal.fire({
+    title: "ยืนยันข้อมูลก่อนบันทึก",
+    html: `
+      <div style="text-align: left">
+        <fieldset style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
+          <legend><strong>🔎 รหัส QR Code</strong></legend>
+          <p>${barcode}</p>
+        </fieldset>
+
+        <fieldset style="border: 1px solid #ccc; padding: 10px;">
+          <legend><strong>📋 รายละเอียด</strong></legend>
+          <p><strong>⚙️ กระบวนการหลัก:</strong> ${mainProcessText}</p>
+          <p><strong>🧩 กระบวนการย่อย:</strong> ${subProcessText}</p>
+          <p><strong>📌 สถานะ:</strong> ${statusText}</p>
+          <p><strong>🔢 จำนวน:</strong> ${quantity}</p>
+          <p><strong>👤 ผู้สแกน:</strong> ${scanner}</p>
+        </fieldset>
+      </div>
+    `,
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonText: "✅ ยืนยัน",
+    cancelButtonText: "❌ ยกเลิก",
+  });
+
+  if (!confirmResult.isConfirmed) return;
+
+  Swal.fire({
+    title: "กำลังบันทึกข้อมูล...",
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+    },
+  });
+
+  try {
+    const res = await fetch(`${apiURL}?page=submitBarcode&barcode=${barcode}&quantity=${quantity}&scanner=${scanner}&mainProcess=${mainProcess}&subProcess=${subProcess}&status=${status}`, {
+  method: "POST"
+});
+    const data = await res.json();
+
+    if (data.success) {
+      Swal.fire({
+        icon: "success",
+        title: "✅ บันทึกสำเร็จ",
+        timer: 2000,
+        showConfirmButton: false,
       });
-      const data = await res.json();
-
-      if (data.success) {
-        Swal.fire({
-          icon: "success",
-          title: "✅ บันทึกสำเร็จ",
-          timer: 2000,
-          showConfirmButton: false,
-        });
-        document.getElementById("barcode").value = "";
-        document.getElementById("quantity").value = "";
-      } else {
-        Swal.fire({
-          icon: "error",
-          title: "เกิดข้อผิดพลาด",
-          text: data.message,
-        });
-      }
-    } catch (err) {
+      document.getElementById("barcode").value = "";
+      document.getElementById("quantity").value = "";
+      document.getElementById("mainProcess").value = "";
+      document.getElementById("subProcess").innerHTML = "<option value=''>-- เลือกกระบวนการย่อย --</option>";
+      document.getElementById("subProcess").disabled = true;
+      document.getElementById("status").innerHTML = "<option value=''>-- เลือกสถานะ --</option>";
+    } else {
       Swal.fire({
         icon: "error",
-        title: "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์",
-        text: "กรุณาลองใหม่อีกครั้ง",
+        title: "เกิดข้อผิดพลาด",
+        text: data.message,
       });
-      console.error(err);
     }
+  } catch (err) {
+    Swal.fire({
+      icon: "error",
+      title: "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์",
+      text: "กรุณาลองใหม่อีกครั้ง",
+    });
+    console.error(err);
   }
+}
+
 
   function startScanner() {
     document.getElementById("main-view").style.display = "none";
@@ -523,6 +583,153 @@
       document.getElementById("main-view").style.display = "block";
     }
   }
+
+function handleMainProcessChange() {
+  const main = document.getElementById("mainProcess").value;
+  const sub = document.getElementById("subProcess");
+  const statusSelect = document.getElementById("status");
+
+  // เคลียร์ค่าเดิม
+  sub.innerHTML = "";
+  statusSelect.innerHTML = "";
+
+  const subOptions = {
+    "Compact": [["P", "P - Compact"]],
+    "Sinter & Steam": [
+      ["S", "S - Sinter"],
+      ["STE", "STE - Steam"],
+      ["TEMP", "TEMP - Temper"],
+      ["MW", "MW - MachineWash"]
+    ],
+    "Finishing": [
+      ["ESE", "ESE - Chk. Crack"],
+      ["OD", "OD - Oil Dip"],
+      ["BR", "BR - Barrel"],
+      ["H", "H - De-burring"],
+      ["DRY", "DRY - Drying"],
+      ["SB", "SB - Shot blast"],
+      ["R", "R - Impreganate"],
+      ["OG", "OG - Impreganate"],
+      ["U", "U - UitraSonicWash"],
+      ["DR", "DR - DrawingPress(Sizing)"],
+      ["RP", "RP - Sizing"],
+      ["RO", "RO - Rolling"]
+    ],
+    "Machining": [
+      ["MC", "MC - Machining"],
+      ["NCL", "NCL - NC Lath."],
+      ["L", "L - Lath."],
+      ["GC", "GC - Grinding"],
+      ["DP", "DP - Throuth Pin"],
+      ["UT", "UT - InductionHarden"],
+      ["F", "F - Buffing"],
+      ["D", "D - Drilling"],
+      ["AS", "AS - Assembly"],
+      ["WE", "WE - Welding"]
+    ],
+    "Magna flux": [
+      ["SEM", "SEM - Magna flux"],
+      ["SEMT", "SEMT - Magna flux"]
+    ],
+    "Sort": [["SEL", "SEL - Sort"]],
+    "Pack": [["KON", "KON - Pack"]],
+    "Rework": [["SELD", "SELD - Sort dimension"]]
+  };
+
+  const statusOptions = {
+    "ผสมผง": ["ผงเหล็ก", "ผงปั่น"],
+    "Compact": ["Green Part", "Quarantine"],
+    "Sinter & Steam": [
+      "รอ Sinter", "Sinter O.K", "Quarantine Sinter",
+      "รอ Steam 1", "Steam 1 OK", "Quarantine Steam 1",
+      "รอ Steam 2", "Steam 2 OK", "Quarantine Steam 2"
+    ],
+    "Finishing": [
+      "รอ Sizing", "Sizing OK", "รอ Rolling", "Rolling OK",
+      "รอ Rumble - Oil - Dry", "รอ Check Crack",
+      "รอ Shot blast", "Shot blast OK", "OK", "Quarantine",
+      "รอ Rumble2", "Quarantine Rumble2"
+    ],
+    "Machining": [
+      "Blank รอM/C", "Blank รอส่ง Sub con", "Blank รอส่ง Steam",
+      "Quarantine", "รอส่ง Sorting"
+    ],
+    "Sub Store": [
+      "Blank Wait for Sub-Con", "งานรอส่ง M/F,Rumble,Steam,Sort G1P", "Quarantine Blank Wait for Sub-Con", "Wait for Sorting",
+      "Quarantine รอส่ง Rework"
+    ],
+    "Sort": [
+      "รอ M/F (Blank Part)", "รอ M/F (Sorting Part)", "M/F OK", "Quarantine M/F",
+      "งานBlank รอ Sort", "รอ Sort", "Quarantine Sort", "งานรอทิ้ง Sort",
+      "รอ Pack", "Pack OK (FG1)", "Re-oil (FG1)"
+    ],
+    "Pack": [
+      "รอ Pack", "Pack OK (FG1)", "Re-oil (FG1)", "Quarantine Pack"
+    ],
+    "Rework": [
+      "Quarantine Compact", "Quarantine Sinter", "Quarantine Steam", "Quarantine Finishing",
+      "Quarantine Machining", "Rework Blank Part", "Rework Sorting Part",
+      "Judgement (Blank part)", "Judgement (Sorting part)",
+      "Scrap Blank Part", "Scrap Sorting Part"
+    ]
+  };
+
+  // จัดการกระบวนการย่อย
+  if (main === "ผสมผง" || main === "Sub Store") {
+    sub.disabled = true;
+    sub.style.backgroundColor = "#e5e7eb";
+    const option = document.createElement("option");
+    option.text = "ไม่มี";
+    sub.appendChild(option);
+  } else if (["Compact", "Sort", "Pack", "Rework"].includes(main)) {
+    sub.disabled = false;
+    sub.style.backgroundColor = "#ffffff";
+    const [code, label] = subOptions[main][0];
+    const option = document.createElement("option");
+    option.value = code;
+    option.text = label;
+    sub.appendChild(option);
+  } else if (subOptions[main]) {
+    sub.disabled = false;
+    sub.style.backgroundColor = "#ffffff";
+    const defaultOption = document.createElement("option");
+    defaultOption.text = "-- เลือกกระบวนการย่อย --";
+    defaultOption.value = "";
+    sub.appendChild(defaultOption);
+    subOptions[main].forEach(([code, label]) => {
+      const opt = document.createElement("option");
+      opt.value = code;
+      opt.textContent = label;
+      sub.appendChild(opt);
+    });
+  } else {
+    sub.disabled = true;
+    sub.style.backgroundColor = "#e5e7eb";
+    const fallback = document.createElement("option");
+    fallback.text = "-- ไม่มีข้อมูล --";
+    sub.appendChild(fallback);
+  }
+
+  // จัดการสถานะ
+  if (statusOptions[main]) {
+    const defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.text = "-- เลือกสถานะ --";
+    statusSelect.appendChild(defaultOption);
+    statusOptions[main].forEach(status => {
+      const option = document.createElement("option");
+      option.value = status;
+      option.textContent = status;
+      statusSelect.appendChild(option);
+    });
+  } else {
+    const none = document.createElement("option");
+    none.text = "ไม่มี";
+    statusSelect.appendChild(none);
+  }
+}
+
+
 </script>
 
 </body>
