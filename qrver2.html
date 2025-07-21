@@ -6,6 +6,7 @@
   <title>📦 บันทึก Inventory TAG</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
   <style>
     :root {
       --primary-color: #2563eb;
@@ -419,7 +420,7 @@
 
   <script>
   const apiURL = "https://script.google.com/macros/s/AKfycbwv3h5myYLxn4cermsajkeOr6AL3a_-vyYzJNGJNkyRU-HV2eulbot0O3vO5XGPYUot/exec";
-  let html5QrcodeScanner;
+  let codeReader;
 
   async function submitBarcode() {
   const barcode = document.getElementById("barcode").value.trim();
@@ -526,64 +527,50 @@
 }
 
 
-  function startScanner() {
-    document.getElementById("main-view").style.display = "none";
-    document.getElementById("scanner-view").style.display = "block";
+  // 🟢 เริ่มสแกน QR ด้วย ZXing
+async function startScanner() {
+  document.getElementById("main-view").style.display = "none";
+  document.getElementById("scanner-view").style.display = "block";
 
-    html5QrcodeScanner = new Html5Qrcode("scanner-container");
+  codeReader = new ZXing.BrowserMultiFormatReader();
+  const videoElem = document.createElement("video");
+  videoElem.setAttribute("autoplay", true);
+  videoElem.setAttribute("muted", true);
+  videoElem.setAttribute("playsinline", true);
+  videoElem.style.width = "100%";
+  videoElem.style.height = "100%";
+  videoElem.style.objectFit = "cover";
 
-    const config = {
-      fps: 10,
-      qrbox: { width: 250, height: 250 },
-      aspectRatio: 1.0,
-      disableFlip: false,
-      videoConstraints: {
-        facingMode: "environment"
-      }
-    };
+  const container = document.getElementById("scanner-container");
+  container.innerHTML = ""; // ล้างก่อน
+  container.appendChild(videoElem);
 
-    html5QrcodeScanner.start(
-      { facingMode: "environment" },
-      config,
-      (decodedText, decodedResult) => {
-        // 🔽 ตัดคำว่า MW6 Demo ออก (ถ้ามี)
-        const cleanedText = decodedText.replace(/\s*MW6 Demo\s*$/i, '').trim();
+  try {
+    const constraints = { video: { facingMode: 'environment' } };
+    await codeReader.decodeFromConstraints(constraints, videoElem, (result, err) => {
+      if (result) {
+        const cleanedText = result.text.replace(/\s*MW6 Demo\s*$/i, '').trim();
         document.getElementById("barcode").value = cleanedText;
         document.getElementById("beep").play();
         stopScanner();
-      },
-      (errorMessage) => {
-        // ignore decode errors
       }
-    ).catch((err) => {
-      console.error("Error starting scanner:", err);
-      Swal.fire({
-        icon: "error",
-        title: "❌ ไม่สามารถเปิดกล้องได้",
-        text: err.message
-      });
-      stopScanner();
     });
+  } catch (err) {
+    console.error("ไม่สามารถเปิดกล้อง:", err);
+    Swal.fire({ icon: "error", title: "❌ ไม่สามารถเปิดกล้อง", text: err.message });
+    stopScanner();
   }
+}
 
-  function stopScanner() {
-    if (html5QrcodeScanner) {
-      html5QrcodeScanner.stop().then(() => {
-        html5QrcodeScanner.clear();
-        document.getElementById("scanner-container").innerHTML = ""; // 🧹 ล้างกล้อง
-        document.getElementById("scanner-view").style.display = "none";
-        document.getElementById("main-view").style.display = "block";
-      }).catch((err) => {
-        console.error("Error stopping scanner:", err);
-        document.getElementById("scanner-view").style.display = "none";
-        document.getElementById("main-view").style.display = "block";
-      });
-    } else {
-      document.getElementById("scanner-view").style.display = "none";
-      document.getElementById("main-view").style.display = "block";
-    }
+// 🔴 หยุดการสแกน
+function stopScanner() {
+  if (codeReader) {
+    codeReader.reset();
   }
-
+  document.getElementById("scanner-container").innerHTML = "";
+  document.getElementById("scanner-view").style.display = "none";
+  document.getElementById("main-view").style.display = "block";
+}
 function handleMainProcessChange() {
   const main = document.getElementById("mainProcess").value;
   const sub = document.getElementById("subProcess");
@@ -671,7 +658,7 @@ function handleMainProcessChange() {
       "Quarantine Machining", "Rework Blank Part", "Rework Sorting Part",
       "Judgement (Blank part)", "Judgement (Sorting part)",
       "Scrap Blank Part", "Scrap Sorting Part"
-    ]
+    ],
      // ✅ เพิ่ม Magna flux
   "Magna flux": [
     "รอ M/F (Blank Part)", "รอ M/F (Sorting Part)", "M/F OK", "Quarantine M/F"
