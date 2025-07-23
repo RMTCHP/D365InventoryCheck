@@ -347,6 +347,7 @@
     <option value="Finishing">Finishing</option>
     <option value="Machining">Machining</option>
     <option value="Sub Store">Sub Store</option>
+    <option value="Final Inspection">Final Inspection</option>
     <option value="Magna flux">Magna flux</option>
     <option value="Sort">Sort</option>
     <option value="Pack">Pack</option>
@@ -576,7 +577,6 @@ function handleMainProcessChange() {
   const sub = document.getElementById("subProcess");
   const statusSelect = document.getElementById("status");
 
-  // เคลียร์ค่าเดิม
   sub.innerHTML = "";
   statusSelect.innerHTML = "";
 
@@ -620,7 +620,8 @@ function handleMainProcessChange() {
     ],
     "Sort": [["SEL", "SEL - Sort"]],
     "Pack": [["KON", "KON - Pack"]],
-    "Rework": [["SELD", "SELD - Sort dimension"]]
+    "Rework": [["SELD", "SELD - Sort dimension"]],
+    "Final Inspection": [["K", "K - Final Inspection"]]
   };
 
   const statusOptions = {
@@ -642,7 +643,8 @@ function handleMainProcessChange() {
       "Quarantine", "รอส่ง Sorting", "Blank รอชุบแข็ง", "ชุบแข็ง OK ส่ง Magna"
     ],
     "Sub Store": [
-      "Blank Wait for Sub-Con", "งานรอส่ง M/F,Rumble,Steam,Sort G1P", "Quarantine Blank Wait for Sub-Con", "Wait for Sorting",
+      "Blank Wait for Sub-Con", "งานรอส่ง M/F,Rumble,Steam,Sort G1P",
+      "Quarantine Blank Wait for Sub-Con", "Wait for Sorting",
       "Quarantine รอส่ง Rework"
     ],
     "Sort": [
@@ -659,20 +661,20 @@ function handleMainProcessChange() {
       "Judgement (Blank part)", "Judgement (Sorting part)",
       "Scrap Blank Part", "Scrap Sorting Part"
     ],
-     // ✅ เพิ่ม Magna flux
-  "Magna flux": [
-    "รอ M/F (Blank Part)", "รอ M/F (Sorting Part)", "M/F OK", "Quarantine M/F"
-  ]
+    "Magna flux": [
+      "รอ M/F (Blank Part)", "รอ M/F (Sorting Part)", "M/F OK", "Quarantine M/F"
+    ]
+    // ❌ ไม่ต้องเพิ่ม Final Inspection ในที่นี้
   };
 
-  // จัดการกระบวนการย่อย
+  // 🔽 Sub Process Handling
   if (main === "ผสมผง" || main === "Sub Store") {
     sub.disabled = true;
     sub.style.backgroundColor = "#e5e7eb";
     const option = document.createElement("option");
     option.text = "ไม่มี";
     sub.appendChild(option);
-  } else if (["Compact", "Sort", "Pack", "Rework"].includes(main)) {
+  } else if (["Compact", "Sort", "Pack", "Rework", "Final Inspection"].includes(main)) {
     sub.disabled = false;
     sub.style.backgroundColor = "#ffffff";
     const [code, label] = subOptions[main][0];
@@ -701,8 +703,10 @@ function handleMainProcessChange() {
     sub.appendChild(fallback);
   }
 
-  // จัดการสถานะ
+  // 🔽 Status Handling
   if (statusOptions[main]) {
+    statusSelect.disabled = false;
+    statusSelect.style.backgroundColor = "#ffffff";
     const defaultOption = document.createElement("option");
     defaultOption.value = "";
     defaultOption.text = "-- เลือกสถานะ --";
@@ -714,13 +718,13 @@ function handleMainProcessChange() {
       statusSelect.appendChild(option);
     });
   } else {
+    statusSelect.disabled = true;
+    statusSelect.style.backgroundColor = "#e5e7eb";
     const none = document.createElement("option");
     none.text = "ไม่มี";
     statusSelect.appendChild(none);
   }
 }
-
-
 </script>
 
 </body>
