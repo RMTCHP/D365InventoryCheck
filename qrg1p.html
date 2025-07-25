@@ -584,7 +584,7 @@ function handleMainProcessChange() {
     "Compacting": {
       sub: [["P", "P - Compact"]],
       statusMap: {
-        "P": []  // ➜ ให้ขึ้น "ไม่มี" และเป็นสีเทา
+        "P": [] // ➜ ไม่มีสถานะ
       }
     },
     "Sinter": {
@@ -593,20 +593,16 @@ function handleMainProcessChange() {
         ["ESE", "ESE - Check Crack"],
         ["OD", "OD - Oil Dip"]
       ],
-      statusMap: {
-        "S": [
-          "Green Part",
-          "Quarantine Green Part",
-          "Sinter OK",
-          "Quarantine Sinter"
-        ],
-        "ESE": [
-          "รอ Check Crack",
-          "Check Crack OK",
-          "Quarantine Check Crack"
-        ],
-        "OD": ["Oil Dip OK"]
-      }
+      status: [
+        "Green Part",
+        "Quarantine Green Part",
+        "Sinter OK",
+        "Quarantine Sinter",
+        "รอ Check Crack",
+        "Check Crack OK",
+        "Quarantine Check Crack",
+        "Oil Dip OK"
+      ]
     },
     "Finishing": {
       sub: [
@@ -644,8 +640,6 @@ function handleMainProcessChange() {
       sub: [["K", "K - QC Check"]],
       status: ["รอ QC Check"]
     },
-
-    // ✅ อื่น ๆ ใช้รูปแบบเดิม
     "Sort": {
       sub: [["SEL", "SEL - Sort"]],
       status: ["รอ Sort", "Sort OK", "Quarantine Sort"]
@@ -710,7 +704,7 @@ function handleMainProcessChange() {
         statusSelect.appendChild(option);
       });
     } else {
-      // ✅ ไม่มีสถานะ ➜ ให้แสดง "ไม่มี" แบบเทา
+      // ✅ ไม่มีสถานะ ➜ แสดงว่า "ไม่มี" และ disable
       statusSelect.disabled = true;
       statusSelect.style.backgroundColor = "#e5e7eb";
       statusSelect.innerHTML = "<option value=''>ไม่มี</option>";
@@ -718,7 +712,7 @@ function handleMainProcessChange() {
   };
 
   // 🟢 หากมีแค่ 1 sub-option ให้ trigger การเปลี่ยนค่าทันที
-  if (selected.sub.length === 1) {
+  if (selected?.sub?.length === 1) {
     sub.dispatchEvent(new Event("change"));
   }
 }
