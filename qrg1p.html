@@ -581,13 +581,11 @@ function handleMainProcessChange() {
   statusSelect.innerHTML = "";
 
   const processMap = {
-    "ผสมผง": {
-      sub: [["", "ไม่มี"]],
-      status: ["ผงเหล็ก(RM)", "ผงปั่น(Mix)"]
-    },
     "Compacting": {
       sub: [["P", "P - Compact"]],
-      status: ["ไม่มี"]
+      statusMap: {
+        "P": []  // ➜ ให้ขึ้น "ไม่มี" และเป็นสีเทา
+      }
     },
     "Sinter": {
       sub: [
@@ -596,20 +594,18 @@ function handleMainProcessChange() {
         ["OD", "OD - Oil Dip"]
       ],
       statusMap: {
-        "S": ["Green Part", "Quarantine Green Part", "Sinter OK", "Quarantine Sinter"],
-        "ESE": ["รอ Check Crack", "Check Crack OK", "Quarantine Check Crack"],
+        "S": [
+          "Green Part",
+          "Quarantine Green Part",
+          "Sinter OK",
+          "Quarantine Sinter"
+        ],
+        "ESE": [
+          "รอ Check Crack",
+          "Check Crack OK",
+          "Quarantine Check Crack"
+        ],
         "OD": ["Oil Dip OK"]
-      }
-    },
-    "Magna Flux": {
-      sub: [["SEM", "SEM - Magna Flux"]],
-      statusMap: {
-        "SEM": [
-          "รอ Magna Flux - Blank Part",
-          "รอ Magna Flux - FG Part",
-          "Magna Flux OK",
-          "Quarantine Magna Flux"
-        ]
       }
     },
     "Finishing": {
@@ -642,12 +638,14 @@ function handleMainProcessChange() {
     },
     "Receiving": {
       sub: [["RECS", "RECS - PC"]],
-      status: ["รับมา OK - Sub con"]
+      status: ["รับงาน OK - Sub con"]
     },
     "QC Check": {
       sub: [["K", "K - QC Check"]],
       status: ["รอ QC Check"]
     },
+
+    // ✅ อื่น ๆ ใช้รูปแบบเดิม
     "Sort": {
       sub: [["SEL", "SEL - Sort"]],
       status: ["รอ Sort", "Sort OK", "Quarantine Sort"]
@@ -655,12 +653,27 @@ function handleMainProcessChange() {
     "Packing": {
       sub: [["KON", "KON - Pack"]],
       status: ["รอ Pack", "Pack OK FG1", "Re - Oil", "Quarantine Pack"]
+    },
+    "Magna Flux": {
+      sub: [["SEM", "SEM - Magna Flux"]],
+      statusMap: {
+        "SEM": [
+          "รอ Magna Flux - Blank Part",
+          "รอ Magna Flux - FG Part",
+          "Magna Flux OK",
+          "Quarantine Magna Flux"
+        ]
+      }
+    },
+    "ผสมผง": {
+      sub: [["", "ไม่มี"]],
+      status: ["ผงเหล็ก(RM)", "ผงปั่น(Mix)"]
     }
   };
 
   const selected = processMap[main];
 
-  // 🔹 Sub Process
+  // 🔸 สร้าง dropdown กระบวนการย่อย
   if (selected) {
     sub.disabled = false;
     sub.style.backgroundColor = "#ffffff";
@@ -676,7 +689,7 @@ function handleMainProcessChange() {
     sub.innerHTML = "<option value=''>-- ไม่มีข้อมูล --</option>";
   }
 
-  // 🔹 Status Process
+  // 🔹 เมื่อเลือกกระบวนการย่อย ให้กำหนด status ที่สอดคล้อง
   sub.onchange = () => {
     const subVal = sub.value;
     statusSelect.innerHTML = "";
@@ -697,17 +710,19 @@ function handleMainProcessChange() {
         statusSelect.appendChild(option);
       });
     } else {
+      // ✅ ไม่มีสถานะ ➜ ให้แสดง "ไม่มี" แบบเทา
       statusSelect.disabled = true;
       statusSelect.style.backgroundColor = "#e5e7eb";
       statusSelect.innerHTML = "<option value=''>ไม่มี</option>";
     }
   };
 
-  // trigger one time if only 1 sub option
+  // 🟢 หากมีแค่ 1 sub-option ให้ trigger การเปลี่ยนค่าทันที
   if (selected.sub.length === 1) {
     sub.dispatchEvent(new Event("change"));
   }
 }
+
 
 </script>
 
