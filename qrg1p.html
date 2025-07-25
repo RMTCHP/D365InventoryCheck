@@ -663,35 +663,55 @@ function handleMainProcessChange() {
 
   const selected = processMap[main];
 
-  // 🔹 Sub Process dropdown
+  // ✅ SUB PROCESS
   if (selected) {
-    sub.disabled = false;
-    sub.style.backgroundColor = "#ffffff";
+    const isNoSub =
+      selected.sub.length === 1 &&
+      (selected.sub[0][0] === "" || selected.sub[0][1] === "ไม่มี");
 
-    if (selected.sub.length > 1) {
-      const defaultOption = document.createElement("option");
-      defaultOption.value = "";
-      defaultOption.text = "-- เลือกกระบวนการย่อย --";
-      sub.appendChild(defaultOption);
-    }
-
-    selected.sub.forEach(([value, label]) => {
+    if (isNoSub) {
+      sub.disabled = true;
+      sub.style.backgroundColor = "#e5e7eb";
       const option = document.createElement("option");
-      option.value = value;
-      option.text = label;
+      option.value = "";
+      option.text = "ไม่มี";
       sub.appendChild(option);
-    });
+    } else {
+      sub.disabled = false;
+      sub.style.backgroundColor = "#ffffff";
+
+      if (selected.sub.length > 1) {
+        const defaultOption = document.createElement("option");
+        defaultOption.value = "";
+        defaultOption.text = "-- เลือกกระบวนการย่อย --";
+        sub.appendChild(defaultOption);
+      }
+
+      selected.sub.forEach(([value, label]) => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.text = label;
+        sub.appendChild(option);
+      });
+    }
   } else {
     sub.disabled = true;
     sub.style.backgroundColor = "#e5e7eb";
     sub.innerHTML = "<option value=''>-- ไม่มีข้อมูล --</option>";
   }
 
-  // 🔹 Status dropdown (based only on Main Process)
+  // ✅ STATUS
+  const statuses = selected?.status || [];
   statusSelect.innerHTML = "";
 
-  const statuses = selected?.status || [];
-  if (statuses.length > 0) {
+  if (statuses.length === 1) {
+    statusSelect.disabled = true;
+    statusSelect.style.backgroundColor = "#e5e7eb";
+    const option = document.createElement("option");
+    option.value = statuses[0];
+    option.text = statuses[0];
+    statusSelect.appendChild(option);
+  } else if (statuses.length > 1) {
     statusSelect.disabled = false;
     statusSelect.style.backgroundColor = "#ffffff";
 
@@ -701,10 +721,10 @@ function handleMainProcessChange() {
     statusSelect.appendChild(defaultOption);
 
     statuses.forEach(status => {
-      const opt = document.createElement("option");
-      opt.value = status;
-      opt.textContent = status;
-      statusSelect.appendChild(opt);
+      const option = document.createElement("option");
+      option.value = status;
+      option.textContent = status;
+      statusSelect.appendChild(option);
     });
   } else {
     statusSelect.disabled = true;
@@ -712,6 +732,7 @@ function handleMainProcessChange() {
     statusSelect.innerHTML = "<option value=''>ไม่มี</option>";
   }
 }
+
 
 </script>
 
