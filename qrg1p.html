@@ -583,9 +583,7 @@ function handleMainProcessChange() {
   const processMap = {
     "Compacting": {
       sub: [["P", "P - Compact"]],
-      statusMap: {
-        "P": [] // ➜ ไม่มีสถานะ
-      }
+      status: [] // ➜ ไม่มีสถานะ
     },
     "Sinter": {
       sub: [
@@ -611,22 +609,22 @@ function handleMainProcessChange() {
         ["OG", "OG - Impreganate"],
         ["RP", "RP - Sizing"]
       ],
-      statusMap: {
-        "OD": ["รอ Oil Dip", "Oil Dip OK"],
-        "SB": ["รอ Shot blast", "Shot blast OK", "Quarantine Shot blast"],
-        "OG": ["รออัดน้ำมัน", "อัดน้ำมัน OK"],
-        "RP": ["รอ Sizing", "Sizing OK", "Quarantine Sizing"]
-      }
+      status: [
+        "รอ Oil Dip", "Oil Dip OK",
+        "รอ Shot blast", "Shot blast OK", "Quarantine Shot blast",
+        "รออัดน้ำมัน", "อัดน้ำมัน OK",
+        "รอ Sizing", "Sizing OK", "Quarantine Sizing"
+      ]
     },
     "Machining": {
       sub: [
         ["NCL", "NCL - NC Lathe"],
         ["GC", "GC - Grinding"]
       ],
-      statusMap: {
-        "NCL": ["รอกลึง", "กลึง OK", "Quarantine NC Lathe"],
-        "GC": ["รอเจียร", "เจียร OK", "Quarantine Grinding"]
-      }
+      status: [
+        "รอกลึง", "กลึง OK", "Quarantine NC Lathe",
+        "รอเจียร", "เจียร OK", "Quarantine Grinding"
+      ]
     },
     "Delivery": {
       sub: [["DELS", "DELS - Sub Con"]],
@@ -650,14 +648,12 @@ function handleMainProcessChange() {
     },
     "Magna Flux": {
       sub: [["SEM", "SEM - Magna Flux"]],
-      statusMap: {
-        "SEM": [
-          "รอ Magna Flux - Blank Part",
-          "รอ Magna Flux - FG Part",
-          "Magna Flux OK",
-          "Quarantine Magna Flux"
-        ]
-      }
+      status: [
+        "รอ Magna Flux - Blank Part",
+        "รอ Magna Flux - FG Part",
+        "Magna Flux OK",
+        "Quarantine Magna Flux"
+      ]
     },
     "ผสมผง": {
       sub: [["", "ไม่มี"]],
@@ -667,7 +663,7 @@ function handleMainProcessChange() {
 
   const selected = processMap[main];
 
-  // 🔸 สร้าง dropdown กระบวนการย่อย
+  // ✅ SUB PROCESS
   if (selected) {
     sub.disabled = false;
     sub.style.backgroundColor = "#ffffff";
@@ -683,39 +679,32 @@ function handleMainProcessChange() {
     sub.innerHTML = "<option value=''>-- ไม่มีข้อมูล --</option>";
   }
 
-  // 🔹 เมื่อเลือกกระบวนการย่อย ให้กำหนด status ที่สอดคล้อง
-  sub.onchange = () => {
-    const subVal = sub.value;
-    statusSelect.innerHTML = "";
-    const subStatuses = selected.statusMap?.[subVal] || selected.status || [];
+  // ✅ STATUS (อิงเฉพาะกระบวนการหลัก ไม่ขึ้นกับ Sub)
+  statusSelect.innerHTML = "";
 
-    if (subStatuses.length > 0) {
-      statusSelect.disabled = false;
-      statusSelect.style.backgroundColor = "#ffffff";
-      const defaultOption = document.createElement("option");
-      defaultOption.value = "";
-      defaultOption.text = "-- เลือกสถานะ --";
-      statusSelect.appendChild(defaultOption);
+  const statuses = selected?.status || [];
+  if (statuses.length > 0) {
+    statusSelect.disabled = false;
+    statusSelect.style.backgroundColor = "#ffffff";
 
-      subStatuses.forEach(status => {
-        const option = document.createElement("option");
-        option.value = status;
-        option.textContent = status;
-        statusSelect.appendChild(option);
-      });
-    } else {
-      // ✅ ไม่มีสถานะ ➜ แสดงว่า "ไม่มี" และ disable
-      statusSelect.disabled = true;
-      statusSelect.style.backgroundColor = "#e5e7eb";
-      statusSelect.innerHTML = "<option value=''>ไม่มี</option>";
-    }
-  };
+    const defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.text = "-- เลือกสถานะ --";
+    statusSelect.appendChild(defaultOption);
 
-  // 🟢 หากมีแค่ 1 sub-option ให้ trigger การเปลี่ยนค่าทันที
-  if (selected?.sub?.length === 1) {
-    sub.dispatchEvent(new Event("change"));
+    statuses.forEach(status => {
+      const opt = document.createElement("option");
+      opt.value = status;
+      opt.textContent = status;
+      statusSelect.appendChild(opt);
+    });
+  } else {
+    statusSelect.disabled = true;
+    statusSelect.style.backgroundColor = "#e5e7eb";
+    statusSelect.innerHTML = "<option value=''>ไม่มี</option>";
   }
 }
+
 
 
 </script>
