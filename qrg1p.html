@@ -583,7 +583,7 @@ function handleMainProcessChange() {
   const processMap = {
     "Compacting": {
       sub: [["P", "P - Compact"]],
-      status: [] // ➜ ไม่มีสถานะ
+      status: []
     },
     "Sinter": {
       sub: [
@@ -663,10 +663,18 @@ function handleMainProcessChange() {
 
   const selected = processMap[main];
 
-  // ✅ SUB PROCESS
+  // 🔹 Sub Process dropdown
   if (selected) {
     sub.disabled = false;
     sub.style.backgroundColor = "#ffffff";
+
+    if (selected.sub.length > 1) {
+      const defaultOption = document.createElement("option");
+      defaultOption.value = "";
+      defaultOption.text = "-- เลือกกระบวนการย่อย --";
+      sub.appendChild(defaultOption);
+    }
+
     selected.sub.forEach(([value, label]) => {
       const option = document.createElement("option");
       option.value = value;
@@ -679,7 +687,7 @@ function handleMainProcessChange() {
     sub.innerHTML = "<option value=''>-- ไม่มีข้อมูล --</option>";
   }
 
-  // ✅ STATUS (อิงเฉพาะกระบวนการหลัก ไม่ขึ้นกับ Sub)
+  // 🔹 Status dropdown (based only on Main Process)
   statusSelect.innerHTML = "";
 
   const statuses = selected?.status || [];
@@ -704,8 +712,6 @@ function handleMainProcessChange() {
     statusSelect.innerHTML = "<option value=''>ไม่มี</option>";
   }
 }
-
-
 
 </script>
 
