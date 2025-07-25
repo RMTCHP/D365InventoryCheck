@@ -437,56 +437,14 @@
   const status = statusEl.disabled ? "ไม่มี" : statusEl.value.trim();
 
   // ✅ ตรวจเฉพาะ field ที่ต้องไม่ว่างจริง ๆ
-  if (!barcode) {
-  Swal.fire({
-    icon: "error",
-    title: "กรุณาสแกน QR Code",
-  });
-  return;
-}
-
-if (!quantity) {
-  Swal.fire({
-    icon: "error",
-    title: "กรุณาระบุจำนวน",
-  });
-  return;
-}
-
-if (!scanner) {
-  Swal.fire({
-    icon: "error",
-    title: "กรุณากรอกชื่อผู้สแกน",
-  });
-  return;
-}
-
-if (!mainProcess) {
-  Swal.fire({
-    icon: "error",
-    title: "กรุณาเลือกกระบวนการหลัก",
-  });
-  return;
-}
-
-const subProcess = subProcessEl.disabled ? "ไม่มี" : subProcessEl.value.trim();
-if (!subProcess) {
-  Swal.fire({
-    icon: "error",
-    title: "กรุณาเลือกกระบวนการย่อย",
-  });
-  return;
-}
-
-const status = statusEl.disabled ? "ไม่มี" : statusEl.value.trim();
-if (!status) {
-  Swal.fire({
-    icon: "error",
-    title: "กรุณาเลือกสถานะ",
-  });
-  return;
-}
-
+  if (!barcode || !quantity || !scanner || !mainProcess || !subProcess || !status) {
+    Swal.fire({
+      icon: "error",
+      title: "กรอกข้อมูลไม่ครบ",
+      text: "กรุณากรอกข้อมูลให้ครบทุกช่อง",
+    });
+    return;
+  }
 
   // ✅ ตรวจสอบว่า quantity เป็นตัวเลขและมากกว่า 0
   if (isNaN(quantity) || Number(quantity) <= 0) {
