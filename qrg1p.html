@@ -428,10 +428,15 @@
   const quantity = document.getElementById("quantity").value.trim();
   const scanner = document.getElementById("scanner").value.trim();
   const mainProcess = document.getElementById("mainProcess").value.trim();
-  const subProcess = document.getElementById("subProcess").value.trim();
-  const status = document.getElementById("status").value.trim();
 
-  // ✅ ตรวจสอบให้ครบทุกช่องที่จำเป็น
+  const subProcessEl = document.getElementById("subProcess");
+  const statusEl = document.getElementById("status");
+
+  // ✅ หาก dropdown ถูก disable ให้ส่ง "ไม่มี"
+  const subProcess = subProcessEl.disabled ? "ไม่มี" : subProcessEl.value.trim();
+  const status = statusEl.disabled ? "ไม่มี" : statusEl.value.trim();
+
+  // ✅ ตรวจเฉพาะ field ที่ต้องไม่ว่างจริง ๆ
   if (!barcode || !quantity || !scanner || !mainProcess || !subProcess || !status) {
     Swal.fire({
       icon: "error",
@@ -451,10 +456,10 @@
     return;
   }
 
-  // ✅ ดึงชื่อเต็มของ subProcess
-  const subProcessText = document.querySelector('#subProcess option:checked')?.textContent || '-';
-  const mainProcessText = mainProcess || '-';
-  const statusText = status || '-';
+  // ✅ แสดงข้อมูลสำหรับยืนยัน
+  const subProcessText = subProcessEl.options[subProcessEl.selectedIndex]?.textContent || subProcess;
+  const statusText = statusEl.options[statusEl.selectedIndex]?.textContent || status;
+  const mainProcessText = mainProcess || "-";
 
   const confirmResult = await Swal.fire({
     title: "ยืนยันข้อมูลก่อนบันทึก",
@@ -464,7 +469,6 @@
           <legend><strong>🔎 รหัส QR Code</strong></legend>
           <p>${barcode}</p>
         </fieldset>
-
         <fieldset style="border: 1px solid #ccc; padding: 10px;">
           <legend><strong>📋 รายละเอียด</strong></legend>
           <p><strong>⚙️ กระบวนการหลัก:</strong> ${mainProcessText}</p>
@@ -483,6 +487,7 @@
 
   if (!confirmResult.isConfirmed) return;
 
+  // ✅ แสดง loading ขณะส่งข้อมูล
   Swal.fire({
     title: "กำลังบันทึกข้อมูล...",
     allowOutsideClick: false,
@@ -493,8 +498,8 @@
 
   try {
     const res = await fetch(`${apiURL}?page=submitBarcode&barcode=${barcode}&quantity=${quantity}&scanner=${scanner}&mainProcess=${mainProcess}&subProcess=${subProcess}&status=${status}`, {
-  method: "POST"
-});
+      method: "POST"
+    });
     const data = await res.json();
 
     if (data.success) {
@@ -504,12 +509,19 @@
         timer: 2000,
         showConfirmButton: false,
       });
+
+      // ✅ รีเซ็ตฟอร์ม
       document.getElementById("barcode").value = "";
       document.getElementById("quantity").value = "";
       document.getElementById("mainProcess").value = "";
+      document.getElementById("scanner").value = "";
+
       document.getElementById("subProcess").innerHTML = "<option value=''>-- เลือกกระบวนการย่อย --</option>";
       document.getElementById("subProcess").disabled = true;
+
       document.getElementById("status").innerHTML = "<option value=''>-- เลือกสถานะ --</option>";
+      document.getElementById("status").disabled = true;
+
     } else {
       Swal.fire({
         icon: "error",
