@@ -36,7 +36,25 @@
       min-height: 100vh;
     }
 
-    .container { width: 100%; max-width: 480px; }
+    .container {
+  width: 100%;
+  max-width: 480px;
+  padding-top: 80px; /* ปรับตามความสูงของ header */
+}
+.fixed-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: var(--primary-color); /* ใช้สีเดียวกับปุ่ม */
+  color: white;
+  text-align: center;
+  padding: 16px;
+  font-size: 20px;
+  font-weight: 700;
+  z-index: 1000;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
 
     .card {
       background: var(--surface);
@@ -319,11 +337,13 @@
   </style>
 </head>
 <body>
+    <!-- ✅ Fixed Head Bar -->
+  <div class="fixed-header">
+    📦 RMT InventoryTAG Demo
+  </div>
+  
   <div class="container">
     <div class="card" id="main-view">
-      <div class="header">
-        <h2>📦 RMT InventoryTAG CHP</h2>
-      </div>
       <div class="form-group">
         <label class="form-label">รหัส QR Code</label>
         <div class="barcode-row">
