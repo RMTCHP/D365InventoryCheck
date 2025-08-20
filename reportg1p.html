@@ -286,7 +286,7 @@
       <div class="header-row">
         <h1 class="header-title">
           <i class="fas fa-chart-bar"></i>
-          RMT Inventory TAG Report
+          RMT Inventory TAG Report — G1P
         </h1>
         <div id="currentDatetime" class="header-datetime"></div>
       </div>
@@ -396,21 +396,21 @@
     </div>
   </div>
 
-  <div id="loadingOverlay" class="loading-overlay" style="display: none;">
-    <i class="fas fa-sync-alt"></i>
-    <span>กำลังโหลดข้อมูล... กรุณารอสักครู่</span>
-  </div>
-
   <script>
     const App = (function() {
       let allFilteredData = [];
       let currentPage = 1;
       const rowsPerPage = 20;
       let hasSearched = false;
-      const loadingOverlay = document.getElementById('loadingOverlay');
-
-      function showLoadingOverlay() { loadingOverlay.style.display = 'flex'; }
-      function hideLoadingOverlay() { loadingOverlay.style.display = 'none'; }
+      function showLoadingPopup() {
+        Swal.fire({
+          title: 'กำลังโหลดข้อมูล...',
+          html: 'กำลังดึงข้อมูลจากเซิร์ฟเวอร์',
+          allowOutsideClick: false,
+          didOpen: () => { Swal.showLoading(); }
+        });
+      }
+      function hideLoadingPopup() { Swal.close(); }
 
       function switchMainPage(pageId) {
         const pages = ['pageDashboard', 'pageSearch'];
@@ -513,7 +513,7 @@
         tbody.innerHTML = '';
         summaryDiv.innerHTML = '';
         paginationControls.style.display = 'none';
-        showLoadingOverlay();
+        showLoadingPopup();
 
         try {
           const response = await fetch(url);
@@ -545,7 +545,7 @@
           summaryDiv.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle"></i><div>เกิดข้อผิดพลาด: ${error.message || String(error)}</div></div>`;
           paginationControls.style.display = 'none';
         } finally {
-          hideLoadingOverlay();
+          hideLoadingPopup();
         }
       }
 
