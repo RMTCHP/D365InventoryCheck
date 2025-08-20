@@ -456,7 +456,12 @@
 
   // ✅ หาก dropdown ถูก disable ให้ส่ง "ไม่มี"
   const subProcess = subProcessEl.disabled ? "ไม่มี" : subProcessEl.value.trim();
-  const status = statusEl.disabled ? "ไม่มี" : statusEl.value.trim();
+  const status = statusEl.disabled
+  ? (statusEl.options[statusEl.selectedIndex]?.value
+     || statusEl.options[0]?.value
+     || statusEl.options[0]?.textContent
+     || "ไม่มี")
+  : statusEl.value.trim();
 
   // ✅ ตรวจเฉพาะ field ที่ต้องไม่ว่างจริง ๆ
   if (!barcode || !quantity || !scanner || !mainProcess || !subProcess || !status) {
