@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>📊 รายงาน Inventory TAG</title>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <!-- Supabase JS is removed as it was not used in the provided code. -->
+  <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+  <style>
+    /* Global Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* CSS Variables for consistent styling */
+    :root {
+      --primary-blue: #1e40af;
+      --secondary-blue: #3b82f6;
+      --light-blue: #dbeafe;
+      --dark-blue: #1e3a8a;
+      --accent-blue: #60a5fa;
+      --white: #ffffff;
+      --light-gray: #f8fafc;
+      --border-gray: #e2e8f0;
+      --text-dark: #1e293b;
+      --text-light: #64748b;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Body Styling */
+    body {
+      font-family: 'Kanit', sans-serif;
+      background: linear-gradient(135deg, var(--light-gray) 0%, #e0f2fe 100%);
+      min-height: 100vh;
+      color: var(--text-dark);
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    /* Header Styling */
+    .header {
+      background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+      padding: 1rem 2rem 1.2rem 2rem;
+      border-radius: 16px;
+      margin-bottom: 1.2rem;
+      box-shadow: var(--shadow-lg);
+      color: var(--white);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    /* Header Row (for layout of title/datetime and description/menu) */
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Header Title (RMT Inventory TAG Report) */
+    .header-title {
+      font-size: 1.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin: 0;
+      line-height: 1;
+      font-weight: 700; /* Inherited from .header h1, but explicitly set for clarity */
+    }
+
+    .header-title i {
+      font-size: 2.5rem;
+      margin-top: 2px;
+    }
+
+    /* Current Date/Time Display */
+    .header-datetime {
+      font-size: 1rem;
+      font-weight: 500;
+      opacity: 0.9;
+    }
+
+    /* Header Description (System description) */
+    .header-description {
+      font-size: 1rem;
+      margin: 0;
+      opacity: 0.9; /* Inherited from .header p, but explicitly set for clarity */
+      font-weight: 300; /* Inherited from .header p, but explicitly set for clarity */
+    }
+
+    /* Header Navigation Menu */
+    .header-menu {
+      display: flex;
+      gap: 1rem;
+      margin-top: auto;
+    }
+
+    .header-menu-btn {
+      background: rgba(255 255 255 / 0.2);
+      border: none;
+      border-radius: 12px;
+      padding: 0.75rem 2rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--white);
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none; /* Ensure links don't have underlines */
+    }
+
+    .header-menu-btn:hover:not(.active) {
+      background: rgba(255 255 255 / 0.4);
+      transform: translateY(-2px);
+    }
+
+    .header-menu-btn.active {
+      background: var(--white);
+      color: var(--primary-blue);
+      font-weight: 700;
+      cursor: default;
+      box-shadow: var(--shadow-lg);
+    }
+
+    /* Main Flex Layout (2 columns) - Adjusted to allow single body scrollbar */
+    .main-flex {
+      display: flex;
+      gap: 1.5rem;
+      align-items: flex-start;
+      /* Removed fixed height to allow content to dictate height and enable single body scrollbar */
+      /* height: calc(100vh - 110px); */
+      min-height: 420px; /* Keep min-height for initial layout stability */
+    }
+
+    /* Controls Section (Left Panel) - Adjusted to allow single body scrollbar */
+    .controls-section {
+      flex: 0 0 20%;
+      max-width: 22%;
+      min-width: 200px;
+      /* Removed fixed height */
+      /* height: 100%; */
+      margin-bottom: 0;
+      background: var(--white);
+      padding: 1rem 1rem 0.75rem 1rem;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border-gray);
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+      /* Removed overflow-y to allow the main body scrollbar to handle scrolling */
+      /* overflow-y: auto; */
+    }
+
+    /* Tab Container (Right Panel) - Adjusted to allow single body scrollbar */
+    .tab-container {
+      flex: 1 1 0;
+      min-width: 0;
+      max-width: 78%;
+      /* Removed fixed height */
+      /* height: 100%; */
+      background: var(--white);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border-gray);
+      /* Removed overflow: hidden to allow content to flow naturally */
+      /* overflow: hidden; */
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Tab Content Area - Adjusted to allow single body scrollbar */
+    .tab-content {
+      flex: 1 1 auto;
+      /* Removed overflow-y to allow the main body scrollbar to handle scrolling */
+      /* overflow-y: auto; */
+      padding: 2rem;
+      min-height: 0;
+    }
+
+    /* Table Container - Keeps horizontal scroll for wide tables, no vertical scrollbar here */
+    .table-container {
+      overflow-x: auto; /* Retained for horizontal scrolling of wide tables */
+      max-height: unset; /* Ensure no max height */
+      overflow-y: unset; /* Ensure no vertical scrollbar for table-container itself */
+    }
+
+    /* Responsive Adjustments for main layout */
+    @media (max-width: 900px) {
+      .main-flex {
+        flex-direction: column;
+        height: auto;
+        min-height: unset;
+      }
+      .controls-section, .tab-container {
+        max-width: 100%;
+        width: 100%;
+        height: auto;
+        /* Ensure no overflow-y on mobile for these sections when stacked */
+        overflow-y: unset;
+      }
+      .tab-content {
+        max-height: unset;
+        overflow-y: unset;
+      }
+    }
+
+    /* Controls Section (Filters) */
+    .controls-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-dark);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.6rem;
+      margin-bottom: 1rem;
+    }
+
+    .input-group {
+      position: relative;
+    }
+
+    .input-group input,
+    .input-group select {
+      width: 100%;
+      padding: 0.5rem 0.75rem 0.5rem 2rem;
+      border: 2px solid var(--border-gray);
+      border-radius: 8px;
+      font-size: 0.87rem;
+      transition: all 0.3s ease;
+      background: var(--white);
+      color: var(--text-dark);
+      font-family: inherit;
+    }
+
+    .input-group input:focus,
+    .input-group select:focus {
+      outline: none;
+      border-color: var(--secondary-blue);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .input-group select {
+      cursor: pointer;
+    }
+
+    .input-group i {
+      position: absolute;
+      left: 0.6rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-light);
+      font-size: 0.8rem;
+    }
+
+    /* Vertical Button Group (Filter/Export Buttons) */
+    .button-group.vertical-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      margin-top: 0.6rem;
+    }
+
+    .button-group.vertical-buttons .btn {
+      width: 100% !important; /* Ensure buttons take full width */
+      min-width: 0;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 0.7rem 1rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 8px;
+      border: none;
+      transition: background 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+      gap: 0.5rem;
+      white-space: nowrap; /* Prevent text wrapping */
+    }
+
+    .button-group.vertical-buttons .btn.btn-primary {
+      background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+      color: #fff;
+    }
+
+    .button-group.vertical-buttons .btn.btn-primary:hover {
+      background: linear-gradient(135deg, var(--secondary-blue) 0%, var(--primary-blue) 100%);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .button-group.vertical-buttons .btn.btn-secondary {
+      background: var(--white);
+      color: var(--primary-blue);
+      border: 2px solid var(--primary-blue);
+    }
+
+    .button-group.vertical-buttons .btn.btn-secondary:hover {
+      background: var(--primary-blue);
+      color: #fff;
+    }
+
+    .button-group.vertical-buttons .btn i {
+      font-size: 1.1rem;
+      margin-right: 0.35rem;
+      vertical-align: middle;
+      display: inline-block;
+    }
+
+    .button-group.vertical-buttons .btn:focus {
+      outline: 2px solid var(--secondary-blue);
+    }
+
+    /* General button group (if any horizontal buttons were present) */
+    .button-group .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    /* Tab Header Styling */
+    .tab-header {
+      display: flex;
+      background: var(--light-gray);
+      border-bottom: 1px solid var(--border-gray);
+    }
+
+    .tab-button {
+      flex: 1;
+      padding: 1rem 2rem;
+      border: none;
+      background: transparent;
+      color: var(--text-light);
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      font-family: inherit;
+      border-bottom: 3px solid transparent;
+    }
+
+    .tab-button.active {
+      background: var(--white);
+      color: var(--primary-blue);
+      border-bottom-color: var(--primary-blue);
+    }
+
+    .tab-button:hover:not(.active) {
+      background: rgba(59, 130, 246, 0.05);
+      color: var(--primary-blue);
+    }
+
+    /* Summary Grid Layout */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    /* Summary Card Styling */
+    .summary-card {
+      background: linear-gradient(135deg, var(--white) 0%, #f8fafc 100%);
+      border: 1px solid var(--border-gray);
+      border-radius: 10px;
+      padding: 0.9rem 1rem;
+      box-shadow: var(--shadow);
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .summary-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .summary-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary-blue) 0%, var(--accent-blue) 100%);
+    }
+
+    .summary-card .icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      margin-bottom: 0.65rem;
+      color: var(--primary-blue);
+      font-size: 1.05rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--light-blue) 0%, #bfdbfe 100%);
+    }
+
+    .summary-card .title {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--text-light);
+      margin-bottom: 0.25rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .summary-card .value {
+      font-size: 1.32rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      line-height: 1;
+    }
+
+    /* Table Styling */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--white);
+    }
+
+    th,
+    td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-gray);
+    }
+
+    th {
+      background: linear-gradient(135deg, var(--primary-blue) 0%, var(--dark-blue) 100%);
+      color: var(--white);
+      font-weight: 600;
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    td {
+      font-size: 0.9rem;
+      color: var(--text-dark);
+    }
+
+    tbody tr {
+      transition: all 0.2s ease;
+    }
+
+    tbody tr:hover {
+      background: var(--light-gray);
+    }
+
+    /* Loading State for content areas */
+    .loading {
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-light);
+      font-size: 1.1rem;
+    }
+
+    .loading i {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: var(--secondary-blue);
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Error State */
+    .error {
+      text-align: center;
+      padding: 3rem;
+      color: #dc2626;
+      font-size: 1.1rem;
+    }
+
+    /* No Data State */
+    .no-data {
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-light);
+      font-size: 1.1rem;
+    }
+
+    /* Responsive Adjustments for smaller screens */
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+      }
+
+      /* Adjust header title size for smaller screens */
+      .header-title {
+        font-size: 2rem;
+      }
+
+      .controls {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .button-group {
+        justify-content: center;
+      }
+
+      .tab-button {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+      }
+
+      table {
+        font-size: 0.8rem;
+      }
+
+      th,
+    td {
+      padding: 0.5rem;
+    }
+    }
+
+    /* Flatpickr customization */
+    .flatpickr-calendar {
+      border-radius: 12px !important;
+      box-shadow: var(--shadow-lg) !important;
+      border: 1px solid var(--border-gray) !important;
+    }
+
+    .flatpickr-day.selected {
+      background: var(--primary-blue) !important;
+      border-color: var(--primary-blue) !important;
+    }
+
+    /* Pagination Controls */
+    .pagination-controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-gray);
+    }
+
+    .pagination-btn {
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--border-gray);
+      border-radius: 8px;
+      background-color: var(--white);
+      color: var(--primary-blue);
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .pagination-btn:hover:not(.active):not(:disabled) {
+      background-color: var(--light-blue);
+      border-color: var(--secondary-blue);
+      color: var(--dark-blue);
+    }
+
+    .pagination-btn.active {
+      background-color: var(--primary-blue);
+      color: var(--white);
+      border-color: var(--primary-blue);
+      font-weight: 600;
+      cursor: default;
+    }
+
+    .pagination-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .pagination-info {
+      font-size: 0.9rem;
+      color: var(--text-light);
+      margin: 0 1rem;
+    }
+
+    /* Dashboard Content (Under Development) */
+    #pageDashboard {
+      min-height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--white);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 2rem;
+      font-size: 1.2rem;
+      color: var(--text-light);
+    }
+
+    /* Loading Overlay Styles */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      flex-direction: column;
+      gap: 1rem;
+      color: var(--primary-blue);
+      font-size: 1.2rem;
+      font-weight: 500;
+    }
+
+    .loading-overlay i {
+      font-size: 3rem;
+      animation: spin 1.5s linear infinite;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <!-- Top Row: Title and Current Datetime -->
+      <div class="header-row">
+        <h1 class="header-title">
+          <i class="fas fa-chart-bar"></i>
+          RMT Inventory TAG Report
+        </h1>
+        <div id="currentDatetime" class="header-datetime"></div>
+      </div>
+      <!-- Bottom Row: Description and Navigation Menu -->
+      <div class="header-row">
+        <p class="header-description">
+          ระบบจัดการและรายงานข้อมูล Inventory ส่วนโรงงาน CHP
+        </p>
+        <nav class="header-menu">
+          <a href="boardtosheet.html" class="header-menu-btn" id="btnDashboard">
+            <i class="fas fa-tachometer-alt"></i> Dashboard
+          </a>
+          <a href="reporttosheet.html" class="header-menu-btn active" id="btnSearch">
+            <i class="fas fa-search"></i> ค้นหา
+          </a>
+        </nav>
+      </div>
+    </div>
+
+   
+    <!-- Search Page (Main functionality) -->
+    <div id="pageSearch" style="display: block;">
+      <div class="main-flex">
+        <!-- Controls Section (Left Panel for Filters) -->
+        <aside class="controls-section">
+          <div class="controls-title">
+            <i class="fas fa-filter"></i>
+            ตัวกรองข้อมูล
+          </div>
+          <div class="controls">
+            <div class="input-group">
+              <i class="fas fa-calendar-alt"></i>
+              <input type="text" id="startDate" placeholder="วันที่เริ่ม" />
+            </div>
+            <div class="input-group">
+              <i class="fas fa-calendar-alt"></i>
+              <input type="text" id="endDate" placeholder="วันที่สิ้นสุด" />
+            </div>
+            <div class="input-group">
+              <i class="fas fa-cogs"></i>
+              <select id="mainProcess">
+                <option value="">ทุกกระบวนการ</option>
+                <option value="ผสมผง">ผสมผง</option>
+                <option value="Compact">Compact</option>
+                <option value="Sinter & Steam">Sinter & Steam</option>
+                <option value="Finishing">Finishing</option>
+                <option value="Machining">Machining</option>
+                <option value="Sub Store">Sub Store</option>
+                <option value="Final Inspection">Final Inspection</option>
+                <option value="Magna flux">Magna flux</option>
+                <option value="Sort">Sort</option>
+                <option value="Pack">Pack</option>
+                <option value="Rework">Rework</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <i class="fas fa-barcode"></i>
+              <input type="text" id="barcodeSearch" placeholder="ค้นหา Barcode..." />
+            </div>
+          </div>
+          <div class="button-group vertical-buttons">
+            <button class="btn btn-primary" onclick="App.loadData()">
+              <i class="fas fa-search"></i>
+              ค้นหา
+            </button>
+            <button class="btn btn-secondary" onclick="App.clearFilters()">
+              <i class="fas fa-eraser"></i>
+              Clear
+            </button>
+            <button class="btn btn-secondary" onclick="App.exportExcel()">
+              <i class="fas fa-file-excel"></i>
+              ดาวน์โหลด Excel
+            </button>
+          </div>
+        </aside>
+
+        <!-- Tab Container (Right Panel for Summary/Details) -->
+        <section class="tab-container">
+          <!-- Tab Header Buttons -->
+          <div class="tab-header">
+            <button class="tab-button active" id="btnSummaryTab" onclick="App.switchTab('summary', this)">
+              <i class="fas fa-chart-pie"></i>
+              สรุปยอดข้อมูล
+            </button>
+            <button class="tab-button" id="btnDetailsTab" onclick="App.switchTab('details', this)">
+              <i class="fas fa-table"></i>
+              ตารางข้อมูลรายละเอียด
+            </button>
+          </div>
+          <!-- Summary Tab Content -->
+          <div id="summaryTab" class="tab-content active">
+            <div class="summary-grid" id="summary">
+              <!-- Loading content for summary will be handled by App.updateSummary or global overlay -->
+            </div>
+          </div>
+          <!-- Details Tab Content -->
+          <div id="detailsTab" class="tab-content">
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th><i class="fas fa-calendar"></i> วันที่</th>
+                    <th><i class="fas fa-barcode"></i> Barcode</th>
+                    <th><i class="fas fa-cogs"></i> กระบวนการหลัก</th>
+                    <th><i class="fas fa-puzzle-piece"></i> กระบวนการย่อย</th>
+                    <th><i class="fas fa-flag"></i> สถานะ</th>
+                    <th><i class="fas fa-hashtag"></i> จำนวน</th>
+                    <th><i class="fas fa-user"></i> ผู้สแกน</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody">
+                  <!-- Loading content for table will be handled by App.displayTablePage or global overlay -->
+                </tbody>
+              </table>
+            </div>
+            <!-- Pagination Controls -->
+            <div id="paginationControls" class="pagination-controls" style="display: none;"></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+    <i class="fas fa-sync-alt"></i>
+    <span>กำลังโหลดข้อมูล... กรุณารอสักครู่</span>
+  </div>
+
+  <script>
+    // Encapsulate all application logic within an IIFE to avoid global scope pollution.
+    const App = (function() {
+      let allFilteredData = []; // Stores all filtered data
+      let currentPage = 1;
+      const rowsPerPage = 20; // Number of rows to display per page
+      let hasSearched = false;
+      const loadingOverlay = document.getElementById('loadingOverlay');
+
+      /**
+       * Shows the loading overlay.
+       */
+      function showLoadingOverlay() {
+        loadingOverlay.style.display = 'flex';
+      }
+
+      /**
+       * Hides the loading overlay.
+       */
+      function hideLoadingOverlay() {
+        loadingOverlay.style.display = 'none';
+      }
+
+      /**
+       * Switches between main application pages (Dashboard/Search).
+       * @param {string} pageId - The ID of the page to display (e.g., 'pageDashboard', 'pageSearch').
+       */
+      function switchMainPage(pageId) {
+        const pages = ['pageDashboard', 'pageSearch'];
+        pages.forEach((id) => {
+          document.getElementById(id).style.display = 'none'; // Hide all pages
+        });
+        document.getElementById(pageId).style.display = 'block'; // Show the selected page
+
+        // Update active state for main menu buttons
+        document.querySelectorAll('.header-menu-btn').forEach((btn) => {
+          btn.classList.remove('active');
+        });
+        document.getElementById('btn' + pageId.replace('page', '')).classList.add('active');
+
+        // If switching to search page, load data
+        if (pageId === 'pageSearch') {
+          loadData();
+        }
+      }
+
+      /**
+       * Switches between tabs within the search page (Summary/Details).
+       * @param {string} tabName - The name of the tab to display (e.g., 'summary', 'details').
+       * @param {HTMLElement} clickedButtonElement - The button element that was clicked (or null if called internally).
+       */
+      function switchTab(tabName, clickedButtonElement = null) {
+        const summaryTab = document.getElementById('summaryTab');
+        const detailsTab = document.getElementById('detailsTab');
+        const paginationControls = document.getElementById('paginationControls');
+
+        // Explicitly hide both tab content divs
+        summaryTab.style.display = 'none';
+        detailsTab.style.display = 'none';
+
+        // Remove active class from all tab buttons
+        document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+
+        // Add 'active' class to the clicked tab button if provided, otherwise find it
+        let targetButton;
+        if (clickedButtonElement) {
+            targetButton = clickedButtonElement;
+        } else {
+            // Find the button based on tabName if not provided (e.g., for initial load)
+            if (tabName === 'summary') {
+                targetButton = document.getElementById('btnSummaryTab');
+            } else if (tabName === 'details') {
+                targetButton = document.getElementById('btnDetailsTab');
+            }
+        }
+
+        if (targetButton) {
+            targetButton.classList.add('active');
+        }
+
+        if (tabName === 'summary') {
+            summaryTab.style.display = 'block';
+            summaryTab.classList.add('active'); // Add active class for CSS styling
+            paginationControls.style.display = 'none';
+        } else if (tabName === 'details') {
+            detailsTab.style.display = 'block';
+            detailsTab.classList.add('active'); // Add active class for CSS styling
+            paginationControls.style.display = 'flex';
+            displayTablePage(currentPage);
+        }
+      }
+
+      /**
+       * Clears all filter inputs and reloads data.
+       */
+      function clearFilters() {
+  document.getElementById('startDate').value = '';
+  document.getElementById('endDate').value = '';
+  document.getElementById('mainProcess').value = '';
+  document.getElementById('barcodeSearch').value = '';
+
+  // Clear Flatpickr instances
+  document.getElementById('startDate')._flatpickr?.clear();
+  document.getElementById('endDate')._flatpickr?.clear();
+
+  // Reset state
+  allFilteredData = [];
+  currentPage = 1;
+  hasSearched = false;
+
+  // แสดงข้อความแนะนำใน summary tab
+  document.getElementById('summary').innerHTML = `
+    <div class="no-data">
+      <i class="fas fa-filter"></i>
+      <div>กรุณาเลือกตัวกรองข้อมูล และกดปุ่ม “ค้นหา”</div>
+    </div>
+  `;
+
+  // ล้างตารางและ pagination
+  document.getElementById('tableBody').innerHTML = '';
+  document.getElementById('paginationControls').style.display = 'none';
+
+  // กลับไปที่ tab สรุปยอด
+  App.switchTab('summary', document.getElementById('btnSummaryTab'));
+}
+
+      /**
+       * Adjusts timestamp by a given number of hours.
+       * Note: This function assumes the input `dateString` is in a format that `new Date()` can parse.
+       * For robust timezone handling, consider a dedicated library or ensuring server-side consistency.
+       * @param {string} dateString - The date string to adjust.
+       * @param {number} hours - The number of hours to add or subtract.
+       * @returns {Date} The adjusted Date object.
+       */
+      function adjustTimeByHours(dateString, hours) {
+        const date = new Date(dateString);
+        date.setHours(date.getHours() + hours);
+        return date;
+      }
+
+      /**
+       * Extracts the barcode part before a slash, if present.
+       * Ensures the input barcode is treated as a string.
+       * @param {*} barcode - The raw barcode value (can be string, number, null, undefined).
+       * @returns {string} The extracted barcode part or '-' if empty.
+       */
+      function extractBarcodeBeforeSlash(barcode) {
+        const barcodeStr = String(barcode || '').trim(); // Convert to string and trim
+        if (!barcodeStr) return '-';
+        const slashIndex = barcodeStr.indexOf('/');
+        return slashIndex !== -1 ? barcodeStr.substring(0, slashIndex) : barcodeStr;
+      }
+
+      /**
+       * Loads and filters data from the Google Apps Script endpoint.
+       */
+      async function loadData() {
+  const startInput = document.getElementById('startDate');
+  const endInput = document.getElementById('endDate');
+
+  const startFp = startInput._flatpickr;
+  const endFp = endInput._flatpickr;
+
+  const startDateObj = startFp?.selectedDates?.[0];
+  const endDateObj = endFp?.selectedDates?.[0];
+
+  // ตรวจสอบว่ามีการเลือกวันที่ครบหรือไม่
+  if (!startDateObj || !endDateObj) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'กรุณาใส่ช่วงเวลาให้ครบ',
+      text: 'โปรดระบุทั้งวันที่เริ่มต้นและวันที่สิ้นสุด',
+      confirmButtonColor: '#dc2626'
+    });
+    return;
+  }
+
+  // ตรวจสอบว่า startDate มากกว่า endDate หรือไม่
+  if (startDateObj > endDateObj) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'ช่วงเวลาผิดพลาด',
+      text: 'วันที่เริ่มต้นต้องน้อยกว่าวันที่สิ้นสุด',
+      confirmButtonColor: '#dc2626'
+    });
+    return;
+  }
+
+  const url = 'https://script.google.com/macros/s/AKfycbwYy1acBX-V37hiU8lhTY-9YGWgVjVplQOIzhNg1-cNispv6L43_rCVRXVO-HqAfik/exec?page=getInventory';
+
+  const tbody = document.getElementById('tableBody');
+  const summaryDiv = document.getElementById('summary');
+  const paginationControls = document.getElementById('paginationControls');
+
+  tbody.innerHTML = '';
+  summaryDiv.innerHTML = '';
+  paginationControls.style.display = 'none';
+  showLoadingOverlay();
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+
+    const selectedProcess = document.getElementById('mainProcess').value;
+    const barcodeKeyword = document.getElementById('barcodeSearch').value.toLowerCase().trim();
+
+    hasSearched = true;
+
+    allFilteredData = data.filter((item) => {
+      const itemDate = new Date(item.Timestamp);
+
+      const matchDate = itemDate >= startDateObj && itemDate <= endDateObj;
+      const matchProcess = !selectedProcess || item.mainProcess === selectedProcess;
+
+      const itemBarcodeStr = String(item.Barcode || '');
+      const matchBarcode = !barcodeKeyword || itemBarcodeStr.toLowerCase().includes(barcodeKeyword);
+
+      return matchDate && matchProcess && matchBarcode;
+    });
+
+    updateSummary(allFilteredData);
+    currentPage = 1;
+    displayTablePage(currentPage);
+
+  } catch (error) {
+    console.error('Error loading data:', error);
+    Swal.fire({
+      icon: 'error',
+      title: 'เกิดข้อผิดพลาดในการโหลดข้อมูล',
+      text: `ไม่สามารถดึงข้อมูลจากเซิร์ฟเวอร์ได้: ${error.message || String(error)}`,
+      confirmButtonColor: '#dc2626',
+    });
+    tbody.innerHTML = `<tr><td colspan="7" class="error"><i class="fas fa-exclamation-triangle"></i><div>เกิดข้อผิดพลาด: ${error.message || String(error)}</div></td></tr>`;
+    summaryDiv.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle"></i><div>เกิดข้อผิดพลาด: ${error.message || String(error)}</div></div>`;
+    paginationControls.style.display = 'none';
+  } finally {
+    hideLoadingOverlay();
+  }
+}
+
+
+      /**
+       * Updates the summary cards based on the provided data.
+       * @param {Array<Object>} data - The filtered data to summarize.
+       */
+      function updateSummary(data) {
+        const summaryDiv = document.getElementById('summary');
+        if (data.length === 0) {
+  const msg = hasSearched
+    ? 'ไม่พบข้อมูลที่ตรงกับเงื่อนไข'
+    : 'กรุณาเลือกตัวกรองข้อมูล และกดปุ่ม “ค้นหา”';
+  summaryDiv.innerHTML = `<div class="no-data"><i class="fas fa-filter"></i><div>${msg}</div></div>`;
+  return;
+}
+
+        const totalQty = data.reduce((sum, row) => sum + Number(row.Quantity || 0), 0);
+        const uniqueScanner = [...new Set(data.map((row) => row.Scanner))].length;
+
+        // Define all possible processes for summary cards
+        const allProcesses = [
+          'ผสมผง', 'Compact', 'Sinter & Steam', 'Finishing', 'Machining',
+          'Sub Store', 'Final Inspection', 'Magna flux', 'Sort', 'Pack', 'Rework',
+        ];
+
+        // Initialize process counts
+        const processCount = {};
+        allProcesses.forEach((process) => {
+          processCount[process] = 0;
+        });
+
+        // Aggregate quantity by main process
+        data.forEach((row) => {
+          const proc = row.mainProcess || 'อื่นๆ';
+          if (allProcesses.includes(proc)) {
+            processCount[proc] += Number(row.Quantity || 0);
+          }
+        });
+
+        // Generate HTML for process summary cards
+        const processCards = allProcesses
+          .map(
+            (process) => `
+            <div class="summary-card">
+              <div class="icon"><i class="fas fa-cog"></i></div>
+              <div class="title">${process}</div>
+              <div class="value">${processCount[process].toLocaleString()}</div>
+            </div>
+          `
+          )
+          .join('');
+
+        // Render all summary cards
+        summaryDiv.innerHTML = `
+          <div class="summary-card">
+            <div class="icon"><i class="fas fa-list"></i></div>
+            <div class="title">รายการทั้งหมด</div>
+            <div class="value">${data.length.toLocaleString()}</div>
+          </div>
+          <div class="summary-card">
+            <div class="icon"><i class="fas fa-boxes"></i></div>
+            <div class="title">รวมจำนวน</div>
+            <div class="value">${totalQty.toLocaleString()}</div>
+          </div>
+          <div class="summary-card">
+            <div class="icon"><i class="fas fa-users"></i></div>
+            <div class="title">ผู้สแกน</div>
+            <div class="value">${uniqueScanner}</div>
+          </div>
+          ${processCards}
+        `;
+      }
+
+      /**
+       * Updates the current date and time display in the header.
+       */
+      function updateDatetime() {
+        const el = document.getElementById('currentDatetime');
+        const now = new Date();
+        el.textContent = now.toLocaleString('en-GB', {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit'
+});
+
+      }
+
+      /**
+       * Displays a specific page of table data.
+       * @param {number} page - The page number to display.
+       */
+      function displayTablePage(page) {
+        currentPage = page;
+        const tbody = document.getElementById('tableBody');
+        const paginationControls = document.getElementById('paginationControls');
+
+        const startIndex = (currentPage - 1) * rowsPerPage;
+        const endIndex = startIndex + rowsPerPage;
+        const dataToDisplay = allFilteredData.slice(startIndex, endIndex);
+
+        if (dataToDisplay.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" class="no-data"><i class="fas fa-inbox"></i><div>ไม่พบข้อมูลในหน้านี้</div></td></tr>`;
+          paginationControls.style.display = 'none';
+          return;
+        }
+
+        // Generate HTML for table rows
+        tbody.innerHTML = dataToDisplay
+          .map((row) => {
+            // Adjust time by 0 hours (assuming timestamp is already local or handles timezone correctly)
+           const adjustedDate = adjustTimeByHours(row.Timestamp, 0);
+           const formattedDate = formatDateToAD(adjustedDate);
+           const displayBarcode = String(row.Barcode || '').trim();
+
+            return `
+  <tr>
+    <td>${formattedDate}</td>
+    <td><code>${displayBarcode}</code></td>
+    <td>${row.mainProcess || '-'}</td>
+    <td>${row.subProcess || '-'}</td>
+    <td><span class="status">${row.status || '-'}</span></td>
+    <td><strong>${(row.Quantity || 0).toLocaleString()}</strong></td>
+    <td>${row.Scanner || '-'}</td>
+  </tr>
+`;
+          }).join('');
+
+        setupPagination(); // Re-setup pagination controls
+
+        // Show pagination controls only if the details tab is active
+        if (document.getElementById('detailsTab').classList.contains('active')) {
+          paginationControls.style.display = 'flex';
+        }
+      }
+
+      /**
+       * Sets up the pagination buttons based on the total filtered data.
+       */
+      function setupPagination() {
+        const paginationControls = document.getElementById('paginationControls');
+        paginationControls.innerHTML = ''; // Clear existing buttons
+
+        const totalPages = Math.ceil(allFilteredData.length / rowsPerPage);
+
+        if (totalPages <= 1) {
+          paginationControls.style.display = 'none'; // Hide pagination if only one page or no data
+          return;
+        }
+
+        // Previous button
+        const prevBtn = document.createElement('button');
+        prevBtn.classList.add('pagination-btn');
+        prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i> Previous';
+        prevBtn.disabled = currentPage === 1;
+        prevBtn.onclick = () => displayTablePage(currentPage - 1);
+        paginationControls.appendChild(prevBtn);
+
+        // Logic for displaying page numbers (current page +/- 2, with ellipsis)
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, currentPage + 2);
+
+        // Adjust start/end to show 5 pages if possible
+        if (endPage - startPage < 4) {
+          if (startPage === 1) endPage = Math.min(totalPages, 5);
+          if (endPage === totalPages) startPage = Math.max(1, totalPages - 4);
+        }
+
+        // First page button and ellipsis if needed
+        if (startPage > 1) {
+          const firstPageBtn = document.createElement('button');
+          firstPageBtn.classList.add('pagination-btn');
+          firstPageBtn.textContent = '1';
+          firstPageBtn.onclick = () => displayTablePage(1);
+          paginationControls.appendChild(firstPageBtn);
+          if (startPage > 2) {
+            const ellipsis = document.createElement('span');
+            ellipsis.textContent = '...';
+            ellipsis.classList.add('pagination-info');
+            paginationControls.appendChild(ellipsis);
+          }
+        }
+
+        // Page number buttons
+        for (let i = startPage; i <= endPage; i++) {
+          const pageBtn = document.createElement('button');
+          pageBtn.classList.add('pagination-btn');
+          pageBtn.textContent = i;
+          if (i === currentPage) {
+            pageBtn.classList.add('active'); // Highlight active page
+          }
+          pageBtn.onclick = () => displayTablePage(i);
+          paginationControls.appendChild(pageBtn);
+        }
+
+        // Last page button and ellipsis if needed
+        if (endPage < totalPages) {
+          if (endPage < totalPages - 1) {
+            const ellipsis = document.createElement('span');
+            ellipsis.textContent = '...';
+            ellipsis.classList.add('pagination-info');
+            paginationControls.appendChild(ellipsis);
+          }
+          const lastPageBtn = document.createElement('button');
+          lastPageBtn.classList.add('pagination-btn');
+          lastPageBtn.textContent = totalPages;
+          lastPageBtn.onclick = () => displayTablePage(totalPages);
+          paginationControls.appendChild(lastPageBtn);
+        }
+
+        // Next button
+        const nextBtn = document.createElement('button');
+        nextBtn.classList.add('pagination-btn');
+        nextBtn.innerHTML = 'Next <i class="fas fa-chevron-right"></i>';
+        nextBtn.disabled = currentPage === totalPages;
+        nextBtn.onclick = () => displayTablePage(currentPage + 1);
+        paginationControls.appendChild(nextBtn);
+      }
+      
+function formatDateToAD(dateInput) {
+  const d = new Date(dateInput);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear(); // ค.ศ.
+  const hour = String(d.getHours()).padStart(2, '0');
+  const minute = String(d.getMinutes()).padStart(2, '0');
+  return `${day}-${month}-${year} ${hour}:${minute}`;
+}
+
+      /**
+       * Exports the filtered data to an Excel file.
+       */
+      function exportExcel() {
+  const startInput = document.getElementById('startDate');
+  const endInput = document.getElementById('endDate');
+  const startDateObj = startInput._flatpickr?.selectedDates?.[0];
+  const endDateObj = endInput._flatpickr?.selectedDates?.[0];
+
+  // ✅ ตรวจสอบว่าเลือกช่วงเวลาแล้วหรือไม่
+  if (!startDateObj || !endDateObj) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'กรุณาใส่ช่วงเวลาให้ครบ',
+      text: 'โปรดระบุทั้งวันที่เริ่มต้นและวันที่สิ้นสุดก่อนส่งออก Excel',
+      confirmButtonColor: '#dc2626',
+    });
+    return;
+  }
+
+  // ✅ ตรวจสอบว่า startDate มากกว่า endDate หรือไม่
+  if (startDateObj > endDateObj) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'ช่วงเวลาผิดพลาด',
+      text: 'วันที่เริ่มต้นต้องไม่มากกว่าวันที่สิ้นสุด',
+      confirmButtonColor: '#dc2626',
+    });
+    return;
+  }
+
+  try {
+    const wb = XLSX.utils.book_new();
+
+    const rows = allFilteredData.map((row) => {
+      let formattedDate = '-';
+      const date = new Date(row.Timestamp);
+      if (date instanceof Date && !isNaN(date.getTime())) {
+        formattedDate = formatDateToAD(row.Timestamp);
+      }
+
+      const barcode = String(row.Barcode || '').trim();
+      const qty = Number(row.Quantity || 0);
+
+      return [
+        formattedDate,
+        barcode,
+        row.mainProcess || '-',
+        row.subProcess || '-',
+        row.status || '-',
+        qty,
+        row.Scanner || '-',
+      ];
+    });
+
+    if (rows.length === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'ไม่มีข้อมูล',
+        text: 'ไม่พบข้อมูลที่ตรงตามเงื่อนไขสำหรับการส่งออก',
+        confirmButtonColor: '#1e40af',
+      });
+      return;
+    }
+
+    const ws = XLSX.utils.aoa_to_sheet([
+      ['วันที่', 'Barcode', 'กระบวนการหลัก', 'กระบวนการย่อย', 'สถานะ', 'จำนวน', 'ผู้สแกน'],
+      ...rows,
+    ]);
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Inventory TAG Report');
+    XLSX.writeFile(wb, `Inventory_Report_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+    Swal.fire({
+      icon: 'success',
+      title: 'ส่งออกสำเร็จ',
+      text: 'ไฟล์ Excel ได้ถูกดาวน์โหลดแล้ว',
+      confirmButtonColor: '#1e40af',
+      timer: 2000,
+    });
+  } catch (error) {
+    console.error('Export error:', error);
+    Swal.fire({
+      icon: 'error',
+      title: 'เกิดข้อผิดพลาด',
+      text: `ไม่สามารถส่งออกไฟล์ได้: ${error.message || String(error)}`,
+      confirmButtonColor: '#1e40af',
+    });
+  }
+}
+
+
+      // Public API for the App module
+      return {
+        switchMainPage: switchMainPage,
+        switchTab: switchTab,
+        clearFilters: clearFilters,
+        loadData: loadData,
+        exportExcel: exportExcel,
+        // Expose other functions if needed for direct access (e.g., for testing)
+        displayTablePage: displayTablePage,
+        setupPagination: setupPagination,
+        updateSummary: updateSummary,
+        updateDatetime: updateDatetime,
+        adjustTimeByHours: adjustTimeByHours,
+        extractBarcodeBeforeSlash: extractBarcodeBeforeSlash
+      };
+    })(); // End of IIFE
+
+    // Event listeners and initial setup outside the IIFE, calling App methods
+    document.addEventListener('DOMContentLoaded', () => {
+  // Initialize Flatpickr for date input fields
+  flatpickr('#startDate', {
+  enableTime: true,
+  dateFormat: 'd-m-Y H:i',
+  time_24hr: true,
+  theme: 'light'
+});
+flatpickr('#endDate', {
+  enableTime: true,
+  dateFormat: 'd-m-Y H:i',
+  time_24hr: true,
+  theme: 'light'
+});
+
+
+  // Event listeners for main menu buttons
+  document.getElementById('btnDashboard').addEventListener('click', () => App.switchMainPage('pageDashboard'));
+  document.getElementById('btnSearch').addEventListener('click', () => App.switchMainPage('pageSearch'));
+
+  // Update datetime every second
+  setInterval(App.updateDatetime, 1000);
+  App.updateDatetime(); // Show immediately on load
+
+  // 👇 ไม่เรียกโหลดข้อมูลอัตโนมัติอีกแล้ว
+  App.switchTab('summary', document.getElementById('btnSummaryTab'));
+
+      // ✅ แสดงข้อความแนะนำเริ่มต้นใน summary tab
+  document.getElementById('summary').innerHTML = `
+    <div class="no-data">
+      <i class="fas fa-filter"></i>
+      <div>กรุณาเลือกตัวกรองข้อมูล และกดปุ่ม “ค้นหา”</div>
+    </div>
+  `;
+});
+
+  </script>
+</body>
+</html>
