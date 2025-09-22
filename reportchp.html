@@ -1073,13 +1073,14 @@
           processCount[process] = 0;
         });
 
-        // Aggregate quantity by main process
-        data.forEach((row) => {
-          const proc = row.mainProcess || 'อื่นๆ';
-          if (allProcesses.includes(proc)) {
-            processCount[proc] += Number(row.Quantity || 0);
-          }
-        });
+        // Aggregate quantity by main process (fix trim issue)
+data.forEach((row) => {
+  const proc = (row.mainProcess || '').trim();   // 🔥 ตัดช่องว่างหัวท้าย
+  if (allProcesses.includes(proc)) {
+    processCount[proc] += Number(row.Quantity || 0);
+  }
+});
+
 
         // Generate HTML for process summary cards
         const processCards = allProcesses
