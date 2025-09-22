@@ -1014,7 +1014,8 @@
       const itemDate = new Date(item.Timestamp);
 
       const matchDate = itemDate >= startDateObj && itemDate <= endDateObj;
-      const matchProcess = !selectedProcess || item.mainProcess === selectedProcess;
+      const matchProcess = !selectedProcess || 
+      (item.mainProcess || '').trim() === selectedProcess.trim();
 
       const itemBarcodeStr = String(item.Barcode || '');
       const matchBarcode = !barcodeKeyword || itemBarcodeStr.toLowerCase().includes(barcodeKeyword);
