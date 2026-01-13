@@ -355,6 +355,15 @@
           </button>
         </div>
       </div>
+
+      <!-- ✅ Tag No. (show only, not saved) -->
+<div class="form-group" id="tagNoGroup" style="display:none;">
+  <label class="form-label">Tag No.</label>
+  <div id="tagNoText" class="form-control" style="background:#f1f5f9; font-weight:700; color:#0f172a;">
+    -
+  </div>
+</div>
+
       <div class="form-group">
 <!-- 🔽 กระบวนการหลัก -->
 <div class="form-group">
@@ -443,8 +452,37 @@
   const apiURL = "https://script.google.com/macros/s/AKfycbx-FXhsv8b5owx7CEMhfi_P8wPKQ__Lkvm8amVse4YDJVTMBHGl6VSvyUugDq4PBNi3/exec";
   let codeReader;
 
+  function extractTagNoFromQrText(qrText) {
+  const s = String(qrText || '').trim();
+  if (!s) return '';
+
+  const parts = s.split('/').map(x => x.trim()).filter(Boolean);
+  if (parts.length === 0) return '';
+
+  const mwIndex = parts.findIndex(p => /^MW6\s*Demo$/i.test(p));
+  if (mwIndex > 0) return parts[mwIndex - 1];
+
+  return parts[parts.length - 1];
+}
+
+function updateTagNoUI(qrText) {
+  const tagNo = extractTagNoFromQrText(qrText);
+  const group = document.getElementById('tagNoGroup');
+  const text = document.getElementById('tagNoText');
+
+  if (tagNo) {
+    text.textContent = tagNo;
+    group.style.display = '';
+  } else {
+    text.textContent = '-';
+    group.style.display = 'none';
+  }
+}
+
+
   async function submitBarcode() {
   const barcode = document.getElementById("barcode").value.trim();
+  const tagNo = extractTagNoFromQrText(barcode); // ✅ show only
   const quantity = document.getElementById("quantity").value.trim();
   const scanner = document.getElementById("scanner").value.trim();
   const mainProcess = document.getElementById("mainProcess").value.trim();
@@ -483,6 +521,7 @@
         <fieldset style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
           <legend><strong>🔎 รหัส QR Code</strong></legend>
           <p>${barcode}</p>
+          ${tagNo ? `<p><strong>🏷️ Tag No.:</strong> ${tagNo}</p>` : ``}
         </fieldset>
 
         <fieldset style="border: 1px solid #ccc; padding: 10px;">
@@ -525,6 +564,7 @@
         showConfirmButton: false,
       });
       document.getElementById("barcode").value = "";
+      updateTagNoUI(''); // ✅ เพิ่ม
       document.getElementById("quantity").value = "";
       document.getElementById("mainProcess").value = "";
       document.getElementById("subProcess").innerHTML = "<option value=''>-- เลือกกระบวนการย่อย --</option>";
@@ -572,6 +612,7 @@ async function startScanner() {
       if (result) {
         const cleanedText = result.text.replace(/\s*MW6 Demo\s*$/i, '').trim();
         document.getElementById("barcode").value = cleanedText;
+        updateTagNoUI(cleanedText); // ✅ เพิ่ม
         document.getElementById("beep").play();
         stopScanner();
       }
