@@ -798,7 +798,10 @@ function handleMainProcessChange() {
   const processMap = {
     "Compacting": {
       sub: [["P", "P - Compact"]],
-      status: []
+      status: [
+        "Green Part",
+        "Quarantine Green Part"
+      ]
     },
     "Sinter": {
       sub: [
@@ -807,8 +810,6 @@ function handleMainProcessChange() {
         ["OD", "OD - Oil Dip"]
       ],
       status: [
-        "Green Part",
-        "Quarantine Green Part",
         "Sinter OK",
         "Quarantine Sinter",
         "รอ Check Crack",
