@@ -789,18 +789,26 @@ function handleSubProcessChange() {
   const subValue = document.getElementById("subProcess").value;
   const statusSelect = document.getElementById("status");
 
-  if (main !== "Sinter") {
+  if (main !== "Sinter" && main !== "Finishing") {
     handleStatusChange();
     return;
   }
 
-  const sinterStatusBySub = {
-    "S": ["Sinter OK", "Quarantine Sinter"],
-    "ESE": ["Check Crack OK", "Quarantine Check Crack"],
-    "OD": ["Oil Dip OK"]
+  const statusByMainAndSub = {
+    "Sinter": {
+      "S": ["Sinter OK", "Quarantine Sinter"],
+      "ESE": ["Check Crack OK", "Quarantine Check Crack"],
+      "OD": ["Oil Dip OK"]
+    },
+    "Finishing": {
+      "OD": ["Wait Machining"],
+      "SB": ["Wait Shot blast", "Wait Machining", "Quarantine Shot blast"],
+      "OG": ["Wait อัดน้ำมัน", "Wait Machining"],
+      "RP": ["Wait Sizing", "Sizing OK", "Quarantine Sizing"]
+    }
   };
 
-  const statuses = sinterStatusBySub[subValue] || [];
+  const statuses = statusByMainAndSub[main]?.[subValue] || [];
   statusSelect.innerHTML = "";
 
   if (statuses.length === 0) {
@@ -867,12 +875,7 @@ function handleMainProcessChange() {
         ["OG", "OG - Impreganate"],
         ["RP", "RP - Sizing"]
       ],
-      status: [
-        "รอ Oil Dip", "Oil Dip OK",
-        "รอ Shot blast", "Shot blast OK", "Quarantine Shot blast",
-        "รออัดน้ำมัน", "อัดน้ำมัน OK",
-        "รอ Sizing", "Sizing OK", "Quarantine Sizing"
-      ]
+      status: []
     },
     "Machining": {
       sub: [
@@ -907,8 +910,8 @@ function handleMainProcessChange() {
     "Magna Flux": {
       sub: [["SEM", "SEM - Magna Flux"]],
       status: [
-        "รอ Magna Flux - Blank Part",
-        "รอ Magna Flux - FG Part",
+        "Wait Magna Flux - Blank Part",
+        "Wait Magna Flux - FG Part",
         "Magna Flux - Blank Part OK",
         "Magna Flux - FG Part OK",
         "Quarantine Magna Flux"
@@ -991,7 +994,7 @@ function handleMainProcessChange() {
     statusSelect.innerHTML = "<option value=''>ไม่มี</option>";
   }
 
-  if (main === "Sinter") {
+  if (main === "Sinter" || main === "Finishing") {
     statusSelect.disabled = true;
     statusSelect.style.backgroundColor = "#e5e7eb";
     statusSelect.innerHTML = "<option value=''>-- เลือกสถานะ --</option>";
