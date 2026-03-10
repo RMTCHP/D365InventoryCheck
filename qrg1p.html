@@ -389,15 +389,22 @@
 <!-- 🔽 กระบวนการย่อย -->
 <div class="form-group">
   <label class="form-label">กระบวนการย่อย</label>
-  <select id="subProcess" class="form-control">
+  <select id="subProcess" class="form-control" onchange="handleStatusChange()">
     <option value="">-- เลือกกระบวนการย่อย --</option>
   </select>
 </div>
         <!-- 🔽 เลือกสถานะ -->
         <div class="form-group">
   <label for="status" class="form-label">สถานะ</label>
-  <select id="status" class="form-control">
+  <select id="status" class="form-control" onchange="handleStatusChange()">
   <option value="">-- เลือกสถานะ --</option>
+</select>
+</div>
+
+        <div class="form-group">
+  <label for="newStatus" class="form-label">สถานะใหม่</label>
+  <select id="newStatus" class="form-control" disabled>
+  <option value="">-- เลือกสถานะใหม่ --</option>
 </select>
 </div>
 
@@ -487,6 +494,114 @@ function updateTagNoUI(qrText) {
   }
 }
 
+function getNewStatusOptions(mainProcess, subProcess, currentStatus) {
+  const main = String(mainProcess || "").trim();
+  const sub = String(subProcess || "").trim();
+  const status = String(currentStatus || "").trim();
+  if (!status) return [];
+
+  const directMap = {
+    "ผงเหล็ก(RM)": ["ผงเหล็ก(RM)"],
+    "ผงปั่น(Mix)": ["ผงปั่น(Mix)"],
+    "Green Part": ["Green Part"],
+    "Quarantine Green Part": ["Quarantine Green Part"],
+    "Sinter OK": ["Sintering"],
+    "Quarantine Sinter": ["Quarantine Sintering"],
+    "Check Crack OK": ["Check Crack"],
+    "Quarantine Check Crack": ["Quarantine Check Crack"],
+    "Oil Dip OK": ["Oil Dip"],
+    "รอ Magna Flux - Blank Part": ["Sintering", "Sizing", "Machining"],
+    "Wait Magna Flux - Blank Part": ["Sintering", "Sizing", "Machining"],
+    "รอ Magna Flux - FG Part": ["Inspection"],
+    "Wait Magna Flux - FG Part": ["Inspection"],
+    "Magna Flux - Blank Part OK": ["Magna Flux"],
+    "Magna Flux - FG Part OK": ["Inspection"],
+    "Quarantine Magna Flux": ["Quarantine Magna Flux"],
+    "รอ Shot blast": ["Machining"],
+    "Wait Shot blast": ["Machining"],
+    "Quarantine Shot blast": ["Quarantine Shot blast"],
+    "รออัดน้ำมัน": ["Machining"],
+    "Wait อัดน้ำมัน": ["Machining"],
+    "รอ Sizing": ["Sintering", "Magna Flux"],
+    "Wait Sizing": ["Sintering", "Magna Flux"],
+    "Sizing OK": ["Sizing"],
+    "Quarantine Sizing": ["Quarantine Sizing"],
+    "Machining OK": ["Machining"],
+    "Quarantine NC Lathe": ["Quarantine Machining"],
+    "รอเจียร": ["Oil Impregnate"],
+    "เจียร OK": ["Machining"],
+    "Quarantine Grinding": ["Quarantine Machining"],
+    "รอส่ง Sub Con": ["Sintering", "Sizing", "Machining"],
+    "รับงาน OK - Sub con": ["Inspection"],
+    "รอ QC Check": ["Inspection"],
+    "รอ Inspection": ["Inspection"],
+    "Inspection OK": ["Inspection"],
+    "Quarantine Inspection": ["Quarantine Inspection"],
+    "รอ Pack": ["Packing"],
+    "Pack OK FG1": ["FG1"],
+    "Re - Oil": ["Packing"],
+    "Quarantine Pack": ["Packing"]
+  };
+
+  if (status === "รอ Machining" || status === "Wait Machining") {
+    if (main === "Sinter" && sub === "ESE") {
+      return ["Sintering", "Check Crack"];
+    }
+    return ["Machining"];
+  }
+
+  if (status === "รอกลึง") return ["Machining"];
+  if (status === "กลึง OK") return ["Machining"];
+  if (status === "Magna Flux OK") return ["Magna Flux"];
+  if (status === "Sort OK") return ["Inspection"];
+  if (status === "รอ Sort") return ["Inspection"];
+  if (status === "Quarantine Sort") return ["Quarantine Inspection"];
+
+  return directMap[status] || [status];
+}
+
+function handleStatusChange() {
+  const main = document.getElementById("mainProcess").value.trim();
+  const sub = document.getElementById("subProcess").value.trim();
+  const statusValue = document.getElementById("status").value.trim();
+  const newStatusSelect = document.getElementById("newStatus");
+
+  const options = getNewStatusOptions(main, sub, statusValue);
+  newStatusSelect.innerHTML = "";
+
+  if (!statusValue || options.length === 0) {
+    newStatusSelect.disabled = true;
+    newStatusSelect.style.backgroundColor = "#e5e7eb";
+    newStatusSelect.innerHTML = "<option value=''>-- เลือกสถานะใหม่ --</option>";
+    return;
+  }
+
+  if (options.length === 1) {
+    newStatusSelect.disabled = true;
+    newStatusSelect.style.backgroundColor = "#e5e7eb";
+    const option = document.createElement("option");
+    option.value = options[0];
+    option.text = options[0];
+    newStatusSelect.appendChild(option);
+    return;
+  }
+
+  newStatusSelect.disabled = false;
+  newStatusSelect.style.backgroundColor = "#ffffff";
+
+  const defaultOption = document.createElement("option");
+  defaultOption.value = "";
+  defaultOption.text = "-- เลือกสถานะใหม่ --";
+  newStatusSelect.appendChild(defaultOption);
+
+  options.forEach((item) => {
+    const option = document.createElement("option");
+    option.value = item;
+    option.text = item;
+    newStatusSelect.appendChild(option);
+  });
+}
+
 
   async function submitBarcode() {
   const barcode = document.getElementById("barcode").value.trim();
@@ -497,6 +612,7 @@ function updateTagNoUI(qrText) {
 
   const subProcessEl = document.getElementById("subProcess");
   const statusEl = document.getElementById("status");
+  const newStatusEl = document.getElementById("newStatus");
 
   // ✅ หาก dropdown ถูก disable ให้ส่ง "ไม่มี"
   const subProcess = subProcessEl.disabled ? "ไม่มี" : subProcessEl.value.trim();
@@ -506,9 +622,15 @@ function updateTagNoUI(qrText) {
      || statusEl.options[0]?.textContent
      || "ไม่มี")
   : statusEl.value.trim();
+  const newStatus = newStatusEl.disabled
+  ? (newStatusEl.options[newStatusEl.selectedIndex]?.value
+     || newStatusEl.options[0]?.value
+     || newStatusEl.options[0]?.textContent
+     || "ไม่มี")
+  : newStatusEl.value.trim();
 
   // ✅ ตรวจเฉพาะ field ที่ต้องไม่ว่างจริง ๆ
-  if (!barcode || !quantity || !scanner || !mainProcess || !subProcess || !status) {
+  if (!barcode || !quantity || !scanner || !mainProcess || !subProcess || !status || !newStatus) {
     Swal.fire({
       icon: "error",
       title: "กรอกข้อมูลไม่ครบ",
@@ -530,6 +652,7 @@ function updateTagNoUI(qrText) {
   // ✅ แสดงข้อมูลสำหรับยืนยัน
   const subProcessText = subProcessEl.options[subProcessEl.selectedIndex]?.textContent || subProcess;
   const statusText = statusEl.options[statusEl.selectedIndex]?.textContent || status;
+  const newStatusText = newStatusEl.options[newStatusEl.selectedIndex]?.textContent || newStatus;
   const mainProcessText = mainProcess || "-";
 
   const confirmResult = await Swal.fire({
@@ -546,6 +669,7 @@ function updateTagNoUI(qrText) {
           <p><strong>⚙️ กระบวนการหลัก:</strong> ${mainProcessText}</p>
           <p><strong>🧩 กระบวนการย่อย:</strong> ${subProcessText}</p>
           <p><strong>📌 สถานะ:</strong> ${statusText}</p>
+          <p><strong>🆕 สถานะใหม่:</strong> ${newStatusText}</p>
           <p><strong>🔢 จำนวน:</strong> ${quantity}</p>
           <p><strong>👤 ผู้สแกน:</strong> ${scanner}</p>
         </fieldset>
@@ -569,7 +693,7 @@ function updateTagNoUI(qrText) {
   });
 
   try {
-    const res = await fetch(`${apiURL}?page=submitBarcode&barcode=${barcode}&quantity=${quantity}&scanner=${scanner}&mainProcess=${mainProcess}&subProcess=${subProcess}&status=${status}`, {
+    const res = await fetch(`${apiURL}?page=submitBarcode&barcode=${barcode}&quantity=${quantity}&scanner=${scanner}&mainProcess=${mainProcess}&subProcess=${subProcess}&status=${newStatus}`, {
       method: "POST"
     });
     const data = await res.json();
@@ -593,6 +717,8 @@ function updateTagNoUI(qrText) {
 
       document.getElementById("status").innerHTML = "<option value=''>-- เลือกสถานะ --</option>";
       document.getElementById("status").disabled = true;
+      document.getElementById("newStatus").innerHTML = "<option value=''>-- เลือกสถานะใหม่ --</option>";
+      document.getElementById("newStatus").disabled = true;
 
     } else {
       Swal.fire({
@@ -661,9 +787,13 @@ function handleMainProcessChange() {
   const main = document.getElementById("mainProcess").value;
   const sub = document.getElementById("subProcess");
   const statusSelect = document.getElementById("status");
+  const newStatusSelect = document.getElementById("newStatus");
 
   sub.innerHTML = "";
   statusSelect.innerHTML = "";
+  newStatusSelect.innerHTML = "<option value=''>-- เลือกสถานะใหม่ --</option>";
+  newStatusSelect.disabled = true;
+  newStatusSelect.style.backgroundColor = "#e5e7eb";
 
   const processMap = {
     "Compacting": {
@@ -721,7 +851,7 @@ function handleMainProcessChange() {
     },
     "QC Check": {
       sub: [["K", "K - QC Check"]],
-      status: ["รอ QC Check"]
+      status: ["รอ QC Check", "รอ Inspection", "Inspection OK", "Quarantine Inspection"]
     },
     "Sort": {
       sub: [["SEL", "SEL - Sort"]],
@@ -736,7 +866,8 @@ function handleMainProcessChange() {
       status: [
         "รอ Magna Flux - Blank Part",
         "รอ Magna Flux - FG Part",
-        "Magna Flux OK",
+        "Magna Flux - Blank Part OK",
+        "Magna Flux - FG Part OK",
         "Quarantine Magna Flux"
       ]
     },
@@ -816,6 +947,8 @@ function handleMainProcessChange() {
     statusSelect.style.backgroundColor = "#e5e7eb";
     statusSelect.innerHTML = "<option value=''>ไม่มี</option>";
   }
+
+  handleStatusChange();
 }
 
 
