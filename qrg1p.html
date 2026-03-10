@@ -389,7 +389,7 @@
 <!-- 🔽 กระบวนการย่อย -->
 <div class="form-group">
   <label class="form-label">กระบวนการย่อย</label>
-  <select id="subProcess" class="form-control" onchange="handleStatusChange()">
+  <select id="subProcess" class="form-control" onchange="handleSubProcessChange()">
     <option value="">-- เลือกกระบวนการย่อย --</option>
   </select>
 </div>
@@ -783,6 +783,55 @@ function stopScanner() {
   document.getElementById("scanner-view").style.display = "none";
   document.getElementById("main-view").style.display = "block";
 }
+
+function handleSubProcessChange() {
+  const main = document.getElementById("mainProcess").value;
+  const subValue = document.getElementById("subProcess").value;
+  const statusSelect = document.getElementById("status");
+
+  if (main !== "Sinter") {
+    handleStatusChange();
+    return;
+  }
+
+  const sinterStatusBySub = {
+    "S": ["Sinter OK", "Quarantine Sinter"],
+    "ESE": ["Check Crack OK", "Quarantine Check Crack"],
+    "OD": ["Oil Dip OK"]
+  };
+
+  const statuses = sinterStatusBySub[subValue] || [];
+  statusSelect.innerHTML = "";
+
+  if (statuses.length === 0) {
+    statusSelect.disabled = true;
+    statusSelect.style.backgroundColor = "#e5e7eb";
+    statusSelect.innerHTML = "<option value=''>-- เลือกสถานะ --</option>";
+  } else if (statuses.length === 1) {
+    statusSelect.disabled = true;
+    statusSelect.style.backgroundColor = "#e5e7eb";
+    const option = document.createElement("option");
+    option.value = statuses[0];
+    option.text = statuses[0];
+    statusSelect.appendChild(option);
+  } else {
+    statusSelect.disabled = false;
+    statusSelect.style.backgroundColor = "#ffffff";
+    const defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.text = "-- เลือกสถานะ --";
+    statusSelect.appendChild(defaultOption);
+    statuses.forEach((status) => {
+      const option = document.createElement("option");
+      option.value = status;
+      option.textContent = status;
+      statusSelect.appendChild(option);
+    });
+  }
+
+  handleStatusChange();
+}
+
 function handleMainProcessChange() {
   const main = document.getElementById("mainProcess").value;
   const sub = document.getElementById("subProcess");
@@ -809,14 +858,7 @@ function handleMainProcessChange() {
         ["ESE", "ESE - Check Crack"],
         ["OD", "OD - Oil Dip"]
       ],
-      status: [
-        "Sinter OK",
-        "Quarantine Sinter",
-        "รอ Check Crack",
-        "Check Crack OK",
-        "Quarantine Check Crack",
-        "Oil Dip OK"
-      ]
+      status: []
     },
     "Finishing": {
       sub: [
@@ -947,6 +989,12 @@ function handleMainProcessChange() {
     statusSelect.disabled = true;
     statusSelect.style.backgroundColor = "#e5e7eb";
     statusSelect.innerHTML = "<option value=''>ไม่มี</option>";
+  }
+
+  if (main === "Sinter") {
+    statusSelect.disabled = true;
+    statusSelect.style.backgroundColor = "#e5e7eb";
+    statusSelect.innerHTML = "<option value=''>-- เลือกสถานะ --</option>";
   }
 
   handleStatusChange();
