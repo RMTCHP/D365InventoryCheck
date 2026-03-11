@@ -335,6 +335,7 @@
                 <option value="Sort">Sort</option>
                 <option value="Packing">Packing</option>
                 <option value="Magna Flux">Magna Flux</option>
+                <option value="FG">FG</option>
               </select>
             </div>
             <div class="input-group">
@@ -561,7 +562,7 @@
         const uniqueScanner = [...new Set(data.map((row) => row.Scanner))].length;
 
         // 🟢 G1P process set aligned with qrg1p.html
-        const allProcesses = ['ผสมผง','Compacting','Sinter','Finishing','Machining','Delivery','Receiving','QC Check','Sort','Packing','Magna Flux'];
+        const allProcesses = ['ผสมผง','Compacting','Sinter','Finishing','Machining','Delivery','Receiving','QC Check','Sort','Packing','Magna Flux','FG'];
 
         const processCount = {};
         allProcesses.forEach((p) => processCount[p] = 0);
