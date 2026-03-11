@@ -341,7 +341,7 @@
 
    <!-- ✅ Fixed Head Bar -->
   <div class="fixed-header">
-    📦 RMT InventoryTAG G1P
+    📦 RMT InventoryTAG G1P V2
   </div>
   
   <div class="container">
@@ -383,6 +383,7 @@
   <option value="QC Check">QC Check</option>
   <option value="Sort">Sort</option>
   <option value="Packing">Packing</option>
+  <option value="FG">FG</option>
 </select>
 </div>
 
@@ -907,6 +908,10 @@ function handleMainProcessChange() {
     "Packing": {
       sub: [["KON", "KON - Pack"]],
       status: ["รอ Pack", "Pack OK FG1", "Re - Oil", "Quarantine Pack"]
+    },
+    "FG": {
+      sub: [["G1-FGPM", "G1-FGPM"]],
+      status: ["G1-FGPM"]
     },
     "Magna Flux": {
       sub: [["SEM", "SEM - Magna Flux"]],
