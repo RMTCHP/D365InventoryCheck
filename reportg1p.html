@@ -762,7 +762,7 @@
           }
 
           const ws = XLSX.utils.aoa_to_sheet([
-            ['วันที่', 'Barcode', 'กระบวนการหลัก', 'กระบวนการย่อย', 'สถานะ', 'File Name', 'จำนวน', 'ผู้สแกน'],
+            ['วันที่', 'Barcode', 'กระบวนการหลัก', 'กระบวนการย่อย', 'สถานะ', 'ชื่อไฟล์', 'จำนวน', 'ผู้สแกน'],
             ...rows,
           ]);
           XLSX.utils.book_append_sheet(wb, ws, 'Inventory TAG Report (G1P)');
