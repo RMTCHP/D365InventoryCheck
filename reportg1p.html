@@ -383,6 +383,7 @@
                     <th><i class="fas fa-cogs"></i> กระบวนการหลัก</th>
                     <th><i class="fas fa-puzzle-piece"></i> กระบวนการย่อย</th>
                     <th><i class="fas fa-flag"></i> สถานะ</th>
+                    <th><i class="fas fa-file"></i> ชื่อไฟล์</th>
                     <th><i class="fas fa-hashtag"></i> จำนวน</th>
                     <th><i class="fas fa-user"></i> ผู้สแกน</th>
                   </tr>
@@ -505,7 +506,7 @@
         }
 
         // 🔧 TODO: เปลี่ยน URL ให้เป็น Endpoint ของ G1P (ตอนนี้ใช้ของ CHP ชั่วคราว)
-        const url = 'https://script.google.com/macros/s/AKfycby2I0P2BkM7-5xh8XEq6MpD9uMbKN2fyRxFyHLkuuiV4ov-kzWkrEievdgIX-Kv6e8/exec?page=getInventory';
+        const url = 'https://script.google.com/macros/s/AKfycbw4ptuCdK_NM_dGirJ8TuhNK1fUXQC46-Ik_50zvuO1_omZuUHmmYr4Lc64pBSz1Zk/exec?page=getInventory';
 
         const tbody = document.getElementById('tableBody');
         const summaryDiv = document.getElementById('summary');
@@ -542,7 +543,7 @@
         } catch (error) {
           console.error('Error loading data:', error);
           Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาดในการโหลดข้อมูล', text: `ไม่สามารถดึงข้อมูลจากเซิร์ฟเวอร์ได้: ${error.message || String(error)}`, confirmButtonColor: '#dc2626' });
-          tbody.innerHTML = `<tr><td colspan="7" class="error"><i class="fas fa-exclamation-triangle"></i><div>เกิดข้อผิดพลาด: ${error.message || String(error)}</div></td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="8" class="error"><i class="fas fa-exclamation-triangle"></i><div>เกิดข้อผิดพลาด: ${error.message || String(error)}</div></td></tr>`;
           summaryDiv.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle"></i><div>เกิดข้อผิดพลาด: ${error.message || String(error)}</div></div>`;
           paginationControls.style.display = 'none';
         } finally {
@@ -621,7 +622,7 @@
         const dataToDisplay = allFilteredData.slice(startIndex, endIndex);
 
         if (dataToDisplay.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="7" class="no-data"><i class="fas fa-inbox"></i><div>ไม่พบข้อมูลในหน้านี้</div></td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="8" class="no-data"><i class="fas fa-inbox"></i><div>ไม่พบข้อมูลในหน้านี้</div></td></tr>`;
           paginationControls.style.display = 'none';
           return;
         }
@@ -630,6 +631,7 @@
           const adjustedDate = adjustTimeByHours(row.Timestamp, 0);
           const formattedDate = formatDateToAD(adjustedDate);
           const displayBarcode = String(row.Barcode || '').trim();
+          const displayFileName = row.fileName || row.FileName || row['File Name'] || '-';
           return `
             <tr>
               <td>${formattedDate}</td>
@@ -637,6 +639,7 @@
               <td>${row.mainProcess || '-'}</td>
               <td>${row.subProcess || '-'}</td>
               <td><span class="status">${row.status || '-'}</span></td>
+              <td>${displayFileName}</td>
               <td><strong>${(row.Quantity || 0).toLocaleString()}</strong></td>
               <td>${row.Scanner || '-'}</td>
             </tr>`;
@@ -749,7 +752,8 @@
             }
             const barcode = String(row.Barcode || '').trim();
             const qty = Number(row.Quantity || 0);
-            return [formattedDate, barcode, row.mainProcess || '-', row.subProcess || '-', row.status || '-', qty, row.Scanner || '-'];
+            const exportFileName = row.fileName || row.FileName || row['File Name'] || '-';
+            return [formattedDate, barcode, row.mainProcess || '-', row.subProcess || '-', row.status || '-', exportFileName, qty, row.Scanner || '-'];
           });
 
           if (rows.length === 0) {
@@ -758,11 +762,14 @@
           }
 
           const ws = XLSX.utils.aoa_to_sheet([
-            ['วันที่', 'Barcode', 'กระบวนการหลัก', 'กระบวนการย่อย', 'สถานะ', 'จำนวน', 'ผู้สแกน'],
+            ['วันที่', 'Barcode', 'กระบวนการหลัก', 'กระบวนการย่อย', 'สถานะ', 'File Name', 'จำนวน', 'ผู้สแกน'],
             ...rows,
           ]);
           XLSX.utils.book_append_sheet(wb, ws, 'Inventory TAG Report (G1P)');
-          XLSX.writeFile(wb, `Inventory_Report_G1P_${new Date().toISOString().slice(0, 10)}.xlsx`);
+          const now = new Date();
+          const datePart = now.toISOString().slice(0, 10);
+          const timePart = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
+          XLSX.writeFile(wb, `Inventory_Report_G1P_${datePart}_${timePart}.xlsx`);
 
           Swal.fire({ icon: 'success', title: 'ส่งออกสำเร็จ', text: 'ไฟล์ Excel ได้ถูกดาวน์โหลดแล้ว', confirmButtonColor: '#065f46', timer: 2000 });
         } catch (error) {
