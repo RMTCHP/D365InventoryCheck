@@ -753,7 +753,7 @@
             const barcode = String(row.Barcode || '').trim();
             const qty = Number(row.Quantity || 0);
             const exportFileName = row.fileName || row.FileName || row['File Name'] || '-';
-            return [formattedDate, barcode, row.mainProcess || '-', row.subProcess || '-', row.status || '-', exportFileName, qty, row.Scanner || '-'];
+            return [formattedDate, barcode, row.mainProcess || '-', row.subProcess || '-', row.status || '-', qty, row.Scanner || '-', exportFileName];
           });
 
           if (rows.length === 0) {
@@ -762,7 +762,7 @@
           }
 
           const ws = XLSX.utils.aoa_to_sheet([
-            ['วันที่', 'Barcode', 'กระบวนการหลัก', 'กระบวนการย่อย', 'สถานะ', 'ชื่อไฟล์', 'จำนวน', 'ผู้สแกน'],
+            ['วันที่', 'Barcode', 'กระบวนการหลัก', 'กระบวนการย่อย', 'สถานะ', 'จำนวน', 'ผู้สแกน', 'ชื่อไฟล์'],
             ...rows,
           ]);
           XLSX.utils.book_append_sheet(wb, ws, 'Inventory TAG Report (G1P)');
