@@ -394,14 +394,14 @@
   </select>
 </div>
         <!-- 🔽 เลือกสถานะ -->
-        <div class="form-group">
+        <div class="form-group" id="statusGroup" style="display:none;">
   <label for="status" class="form-label">สถานะ</label>
   <select id="status" class="form-control" onchange="handleStatusChange()">
   <option value="">-- เลือกสถานะ --</option>
 </select>
 </div>
 
-        <div class="form-group">
+        <div class="form-group" id="newStatusGroup" style="display:none;">
   <label for="newStatus" class="form-label">สถานะใหม่</label>
   <select id="newStatus" class="form-control" disabled>
   <option value="">-- เลือกสถานะใหม่ --</option>
@@ -842,13 +842,20 @@ function stopScanner() {
 
 function handleSubProcessChange() {
   const main = document.getElementById("mainProcess").value;
-  const subValue = document.getElementById("subProcess").value;
+  const subSelect = document.getElementById("subProcess");
+  const subValue = subSelect.value;
+  const selectedOption = subSelect.options[subSelect.selectedIndex];
+  const subLabel = selectedOption?.dataset?.subLabel || "";
   const statusSelect = document.getElementById("status");
   const rows = processRules[main] || [];
-  const statuses = [...new Set(rows.filter((row) => row.subValue === subValue).map((row) => row.status))];
+  const statuses = [...new Set(
+    rows
+      .filter((row) => row.subValue === subValue && row.status === subLabel)
+      .map((row) => row.status)
+  )];
   statusSelect.innerHTML = "";
 
-  if (!subValue || statuses.length === 0) {
+  if (!subValue || !subLabel || statuses.length === 0) {
     statusSelect.disabled = true;
     statusSelect.style.backgroundColor = "#e5e7eb";
     statusSelect.innerHTML = "<option value=''>-- เลือกสถานะ --</option>";
@@ -900,9 +907,13 @@ function handleMainProcessChange() {
   fileNameInput.value = "";
 
   const rows = processRules[main] || [];
-  const subValues = [...new Set(rows.map((row) => row.subValue).filter(Boolean))];
+  const subOptions = [...new Map(
+    rows
+      .filter((row) => row.subValue && row.status)
+      .map((row) => [`${row.subValue}__${row.status}`, { value: row.subValue, label: row.status }])
+  ).values()];
 
-  if (subValues.length === 0) {
+  if (subOptions.length === 0) {
     sub.disabled = true;
     sub.style.backgroundColor = "#e5e7eb";
     sub.innerHTML = "<option value=''>-- ไม่มีข้อมูล --</option>";
@@ -910,12 +921,13 @@ function handleMainProcessChange() {
     return;
   }
 
-  if (subValues.length === 1) {
+  if (subOptions.length === 1) {
     sub.disabled = true;
     sub.style.backgroundColor = "#e5e7eb";
     const option = document.createElement("option");
-    option.value = subValues[0];
-    option.text = subValues[0];
+    option.value = subOptions[0].value;
+    option.text = subOptions[0].label;
+    option.dataset.subLabel = subOptions[0].label;
     sub.appendChild(option);
   } else {
     sub.disabled = false;
@@ -924,10 +936,11 @@ function handleMainProcessChange() {
     defaultOption.value = "";
     defaultOption.text = "-- เลือกกระบวนการย่อย --";
     sub.appendChild(defaultOption);
-    subValues.forEach((value) => {
+    subOptions.forEach(({ value, label }) => {
       const option = document.createElement("option");
       option.value = value;
-      option.text = value;
+      option.text = label;
+      option.dataset.subLabel = label;
       sub.appendChild(option);
     });
   }
