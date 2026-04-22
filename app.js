@@ -57,7 +57,7 @@ function bindElements() {
     "view-login", "view-shifts", "view-tour", "view-dashboard",
     "logoutBtn", "shiftList", "tourTitle",
     "dbShiftTotal", "dbShiftClosed", "dbQueueCount", "dbLastSync", "dashboardList", "syncNowBtn",
-    "activeShiftText", "closeShiftBtn", "closeShiftResult",
+    "activeShiftText", "closeShiftResult",
     "statTotal", "statDone", "qrReader", "manualQr",
     "actionQrCard", "actionGpsCard", "actionIncidentCard", "qrStepStatus",
     "gpsBtn", "gpsText", "photoInput", "photoPreview",
@@ -89,7 +89,6 @@ function bindEvents() {
   });
 
   el.syncNowBtn.addEventListener("click", () => syncQueue(true));
-  if (el.closeShiftBtn) el.closeShiftBtn.addEventListener("click", onCloseShift);
 
   el.gpsBtn.addEventListener("click", loadGps);
   if (el.actionQrCard) el.actionQrCard.addEventListener("click", openQrScanCard);
@@ -267,7 +266,7 @@ function renderShiftList() {
     const statusClass = status === "CLOSED" ? "badge badge-closed" : "badge badge-open";
 
     return `
-      <div class="shift-card">
+      <div class="shift-card" role="button" tabindex="0">
         <h4>${escapeHtml(getShiftProfile(s))}</h4>
         <p class="meta">เวลา ${escapeHtml(s.start_time || "-")} - ${escapeHtml(s.end_time || "-")}</p>
         <p class="meta">รหัสกะ: ${escapeHtml(s.shift_id || "")}</p>
@@ -278,10 +277,24 @@ function renderShiftList() {
   }).join("");
 
   Array.from(el.shiftList.querySelectorAll("[data-open-shift]")).forEach((btn) => {
-    btn.addEventListener("click", () => {
+    const card = btn.closest(".shift-card");
+    const openSelectedShift = () => {
       const idx = Number(btn.getAttribute("data-open-shift"));
       if (Number.isFinite(idx)) openShift(idx);
+    };
+    btn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      openSelectedShift();
     });
+    if (card) {
+      card.addEventListener("click", openSelectedShift);
+      card.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openSelectedShift();
+        }
+      });
+    }
   });
 }
 
@@ -447,8 +460,6 @@ function refreshStats() {
 function renderDashboard() {
   const total = state.shifts.length;
   const closed = state.shifts.filter((s) => String(s.status || "").toUpperCase() === "CLOSED").length;
-  const activeStatus = String(state.activeShift && state.activeShift.status ? state.activeShift.status : "").toUpperCase();
-
   el.dbShiftTotal.textContent = String(total);
   el.dbShiftClosed.textContent = String(closed);
   el.dbQueueCount.textContent = String(state.queue.length);
@@ -458,8 +469,8 @@ function renderDashboard() {
       ? `${getShiftProfile(state.activeShift)} (${formatShiftWindow(state.activeShift)})`
       : "ยังไม่ได้เลือกกะงาน";
   }
-  if (el.closeShiftBtn) {
-    el.closeShiftBtn.disabled = !state.activeShift || activeStatus === "CLOSED";
+  if (el.closeShiftResult) {
+    el.closeShiftResult.classList.toggle("hidden", !String(el.closeShiftResult.textContent || "").trim());
   }
 
   if (!state.shifts.length) {
@@ -473,7 +484,7 @@ function renderDashboard() {
     const statusClass = status === "CLOSED" ? "badge badge-closed" : "badge badge-open";
 
     return `
-      <div class="dashboard-card">
+      <div class="dashboard-card" role="button" tabindex="0">
         <h4>${escapeHtml(getShiftProfile(s))}</h4>
         <p class="meta">เวลา ${escapeHtml(s.start_time || "-")} - ${escapeHtml(s.end_time || "-")}</p>
         <p class="meta">จุดตรวจทั้งหมด ${checkpointCount}</p>
@@ -484,11 +495,54 @@ function renderDashboard() {
   }).join("");
 
   Array.from(el.dashboardList.querySelectorAll("[data-open-dashboard-shift]")).forEach((btn) => {
-    btn.addEventListener("click", () => {
+    const card = btn.closest(".dashboard-card");
+    const openSelectedShift = () => {
       const idx = Number(btn.getAttribute("data-open-dashboard-shift"));
-      if (Number.isFinite(idx)) openShift(idx);
+      if (Number.isFinite(idx)) handleDashboardShiftSelection(idx);
+    };
+    btn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      openSelectedShift();
     });
+    if (card) {
+      card.addEventListener("click", openSelectedShift);
+      card.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openSelectedShift();
+        }
+      });
+    }
   });
+}
+
+async function handleDashboardShiftSelection(index) {
+  const shift = state.shifts[index];
+  if (!shift) return;
+
+  const isActiveShift = state.activeShift && String(state.activeShift.shift_id || "") === String(shift.shift_id || "");
+  const isOpen = String(shift.status || "OPEN").toUpperCase() !== "CLOSED";
+
+  if (isActiveShift && isOpen && window.Swal) {
+    const result = await Swal.fire({
+      title: "กะนี้กำลังใช้งาน",
+      text: "ต้องการเปิดรอบตรวจต่อ หรือปิดกะงานนี้",
+      icon: "question",
+      showCancelButton: true,
+      showDenyButton: true,
+      confirmButtonText: "เปิดรอบตรวจ",
+      denyButtonText: "ปิดกะ",
+      cancelButtonText: "ยกเลิก"
+    });
+
+    if (result.isDenied) {
+      await onCloseShift();
+      return;
+    }
+    if (!result.isConfirmed) return;
+  }
+
+  await openShift(index);
 }
 
 function refreshQueueBanner() {
@@ -702,12 +756,14 @@ async function onCloseShift() {
 
   try {
     setText(el.closeShiftResult, "กำลังปิดรอบ...");
+    if (el.closeShiftResult) el.closeShiftResult.classList.remove("hidden");
     const res = await callApi("closeShift", { shiftId: state.activeShift.shift_id });
     setText(el.closeShiftResult, `ปิดกะสำเร็จ: checked ${res.checked_points || 0}/${res.total_points || 0}`);
     await refreshShiftPlan();
   } catch (err) {
     enqueueAction("closeShift", { shiftId: state.activeShift.shift_id });
     setText(el.closeShiftResult, `ปิดรอบไม่สำเร็จ: บันทึกคิวออฟไลน์แล้ว (${err.message})`);
+    if (el.closeShiftResult) el.closeShiftResult.classList.remove("hidden");
   }
 }
 
