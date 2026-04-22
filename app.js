@@ -42,12 +42,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     setText(el.loginStatus, "อุปกรณ์ออฟไลน์: บันทึกคิวไว้ก่อน แล้วซิงก์ภายหลังได้");
   }
 
+  clearSession();
   hideGuardHeader();
-  if (loadSession().guardId) {
-    await restoreSession();
-  } else {
-    switchView("login");
-  }
+  switchView("login");
 });
 
 function bindElements() {
