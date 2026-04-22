@@ -373,16 +373,15 @@
   <select id="mainProcess" class="form-control" onchange="handleMainProcessChange()">
   <option value="">-- เลือกกระบวนการหลัก --</option>
   <option value="ผสมผง">ผสมผง</option>
-  <option value="Compacting">Compacting</option>
-  <option value="Sinter">Sinter</option>
-  <option value="Magna Flux">Magna Flux</option>
-  <option value="Finishing">Finishing</option>
-  <option value="Machining">Machining</option>
-  <option value="Delivery">Delivery</option>
-  <option value="Receiving">Receiving</option>
-  <option value="QC Check">QC Check</option>
-  <option value="Sort">Sort</option>
-  <option value="Packing">Packing</option>
+  <option value="Sinter (S)">Sinter (S)</option>
+  <option value="Steam 1 (STE,TEM)">Steam 1 (STE,TEM)</option>
+  <option value="Finishing Area 1 (RP,RO,OD,OG,BR,ESE,SB)">Finishing Area 1 (RP,RO,OD,OG,BR,ESE,SB)</option>
+  <option value="Sub-Store 1 (HT,UT,L,MC,NCL,SEM)">Sub-Store 1 (HT,UT,L,MC,NCL,SEM)</option>
+  <option value="Machining (D,F,L,MC,NCL,GC,UT)">Machining (D,F,L,MC,NCL,GC,UT)</option>
+  <option value="Finishing Area 2">Finishing Area 2</option>
+  <option value="Steam 2 (STE)">Steam 2 (STE)</option>
+  <option value="Sub-Store 2 (STE , K)">Sub-Store 2 (STE , K)</option>
+  <option value="Sorting &amp; Packing Area (SEM,SEMT,SEL,K,KON)">Sorting &amp; Packing Area (SEM,SEMT,SEL,K,KON)</option>
   <option value="FG">FG</option>
 </select>
 </div>
@@ -500,70 +499,97 @@ function updateTagNoUI(qrText) {
   }
 }
 
+const processRules = {
+  "ผสมผง": [
+    { status: "ผงเหล็ก(RM)", subValue: "RM", newStatus: "ผงเหล็ก" },
+    { status: "ผงปั่น(Mix)", subValue: "Mix", newStatus: "ผงปั่น" }
+  ],
+  "Sinter (S)": [
+    { status: "Wait for Sinter (Green Part) (Co)", subValue: "Co", newStatus: "Wait for Sinter (Green Part)" },
+    { status: "Quarantine (Green Part) (Co)", subValue: "Co", newStatus: "Quarantine (Green Part)" },
+    { status: "Sinter O.K (Si)", subValue: "Si", newStatus: "Sinter O.K" },
+    { status: "Quarantine Sinter O.K (Si)", subValue: "Si", newStatus: "Quarantine Sinter O.K" }
+  ],
+  "Steam 1 (STE,TEM)": [
+    { status: "B/F Steam (Si)", subValue: "Si", newStatus: "B/F Steam" },
+    { status: "Quarantine (Si)", subValue: "Si", newStatus: "Quarantine" }
+  ],
+  "Finishing Area 1 (RP,RO,OD,OG,BR,ESE,SB)": [
+    { status: "B/F Sizing (Fi)", subValue: "Fi", newStatus: "B/F Sizing" },
+    { status: "A/F Sizing (Fi)", subValue: "Fi", newStatus: "A/F Sizing" },
+    { status: "B/F Rolling (Fi)", subValue: "Fi", newStatus: "B/F Rolling" },
+    { status: "A/F Rolling (Fi)", subValue: "Fi", newStatus: "A/F Rolling" },
+    { status: "Rumble - Oil - Dry -Impregnation (Fi)", subValue: "Fi", newStatus: "Rumble - Oil - Dry -Impregnation" },
+    { status: "Wait for Check Crack (Fi)", subValue: "Fi", newStatus: "Wait for Check Crack" },
+    { status: "B/F Shot blast (Fi)", subValue: "Fi", newStatus: "B/F Shot blast" },
+    { status: "A/F Shot blast (Fi)", subValue: "Fi", newStatus: "A/F Shot blast" },
+    { status: "OK (Blank Wait for Sub-Contract) (Fi)", subValue: "Fi", newStatus: "OK (Blank Wait for Sub-Contract)" },
+    { status: "Quarantine (Fi)", subValue: "Fi", newStatus: "Quarantine" }
+  ],
+  "Sub-Store 1 (HT,UT,L,MC,NCL,SEM)": [
+    { status: "Blank Wait for Sub-Contract (Fi)", subValue: "Fi", newStatus: "Blank Wait for Sub-Contract" },
+    { status: "Blank Wait for M/F,Rumble,Steam,Sort G1P (Fi)", subValue: "Fi", newStatus: "Blank Wait for M/F,Rumble,Steam Sort G1P" },
+    { status: "Quarantine Blank Wait for Sub-Contract (Fi)", subValue: "Fi", newStatus: "Quarantine Blank Wait for Sub-Contract" },
+    { status: "Sub-contract Area (A) (Fi)", subValue: "Fi", newStatus: "Sub-contract Area (A)" },
+    { status: "Quarantine Sub-con (A) (Fi)", subValue: "Fi", newStatus: "Quarantine Sub-con (A)" },
+    { status: "Sub-contract Area (B) (Su)", subValue: "Su", newStatus: "Sub-contract Area (B)" },
+    { status: "Quarantine Sub-con (B) (Su)", subValue: "Su", newStatus: "Quarantine Sub-con (B)" }
+  ],
+  "Machining (D,F,L,MC,NCL,GC,UT)": [
+    { status: "Blank Wait for Machining 1 (OP1,OP2,F) (Fi)", subValue: "Fi", newStatus: "Blank Wait for Machining 1 (OP1,OP2,F)" },
+    { status: "Blank Wait for Machining (Shot blast) (Ma)", subValue: "Ma", newStatus: "Blank Wait for Machining (Shot blast)" },
+    { status: "Blank Wait for Machining (Grinding) (Ma)", subValue: "Ma", newStatus: "Blank Wait for Machining (Grinding)" },
+    { status: "Blank Wait for Sub-Contract (Su)", subValue: "Su", newStatus: "Blank Wait for Sub-Contract" },
+    { status: "Blank Wait for Steam (Su)", subValue: "Su", newStatus: "Blank Wait for Steam" },
+    { status: "Quarantine (Ma)", subValue: "Ma", newStatus: "Quarantine" },
+    { status: "Blank Wait for Machining A/F HT/BR/OP3 (Ma)", subValue: "Ma", newStatus: "Blank Wait for Machining A/F HT/BR/OP3" }
+  ],
+  "Finishing Area 2": [
+    { status: "Rumble - Oil (Ma)", subValue: "Ma", newStatus: "Rumble - Oil" },
+    { status: "Rumble - Oil OK ( Wait  for Sorting) (So)", subValue: "So", newStatus: "Rumble - Oil OK ( Wait  for Sorting)" },
+    { status: "Quarantine Rumble - Oil (So)", subValue: "So", newStatus: "Quarantine Rumble - Oil" }
+  ],
+  "Steam 2 (STE)": [
+    { status: "B/F Steam  (Su)", subValue: "Su", newStatus: "B/F Steam" },
+    { status: "A/F Steam (Wait for Sub-Contract)  (Ma)", subValue: "Ma", newStatus: "A/F Steam (Wait for Sub-Contract)" },
+    { status: "Quarantine (Ma)", subValue: "Ma", newStatus: "Quarantine" }
+  ],
+  "Sub-Store 2 (STE , K)": [
+    { status: "Wait  for  (So)", subValue: "So", newStatus: "Wait  for" },
+    { status: "Quarantine (So)", subValue: "So", newStatus: "Quarantine" }
+  ],
+  "Sorting & Packing Area (SEM,SEMT,SEL,K,KON)": [
+    { status: "Wait for Magna Flux (Blank Part)  (Fi)", subValue: "Fi", newStatus: "Wait for Magna Flux (Blank Part)" },
+    { status: "Magna Flux O.K (Blank Part) (Fi)", subValue: "Fi", newStatus: "Magna Flux O.K (Blank Part)" },
+    { status: "Wait for Magna Flux (A/F Machining 1 ) (Fi)", subValue: "Fi", newStatus: "Wait for Magna Flux (A/F Machining 1 )" },
+    { status: "Magna Flux O.K (A/F Machining 1) (Su)", subValue: "Su", newStatus: "Magna Flux O.K (A/F Machining 1)" },
+    { status: "Wait for Magna Flux (Sorting Part) (Su)", subValue: "Su", newStatus: "Wait for Magna Flux (Sorting Part)" },
+    { status: "Magna Flux O.K (Sorting Part) (So)", subValue: "So", newStatus: "Magna Flux O.K (Sorting Part)" },
+    { status: "Quarantine Magna Flux (So)", subValue: "So", newStatus: "Quarantine Magna Flux" },
+    { status: "Wait  for Sorting 100% (SELD) (So)", subValue: "So", newStatus: "Wait  for Sorting 100% (SELD)" },
+    { status: "Wait  for Sorting  (SEL,K) (So)", subValue: "So", newStatus: "Wait  for Sorting  (SEL,K)" },
+    { status: "Quarantine Part after sorting (So)", subValue: "So", newStatus: "Quarantine Part after sorting" },
+    { status: "Wait  for Scrap Part after sorting (So)", subValue: "So", newStatus: "Wait  for Scrap Part after sorting" },
+    { status: "Wait  for Pack (So)", subValue: "So", newStatus: "Wait  for Pack" },
+    { status: "Quarantine Pack (So)", subValue: "So", newStatus: "Quarantine Pack" }
+  ],
+  "FG": [
+    { status: "G1-FGPM", subValue: "G1-FGPM", newStatus: "G1-FGPM" }
+  ]
+};
+
 function getNewStatusOptions(mainProcess, subProcess, currentStatus) {
   const main = String(mainProcess || "").trim();
   const sub = String(subProcess || "").trim();
   const status = String(currentStatus || "").trim();
-  if (!status) return [];
+  if (!main || !sub || !status) return [];
 
-  const directMap = {
-    "ผงเหล็ก(RM)": ["ผงเหล็ก(RM)"],
-    "ผงปั่น(Mix)": ["ผงปั่น(Mix)"],
-    "Green Part": ["Green Part"],
-    "Quarantine Green Part": ["Quarantine Green Part"],
-    "Sinter OK": ["Sintering"],
-    "Quarantine Sinter": ["Quarantine Sintering"],
-    "Check Crack OK": ["Check Crack"],
-    "Quarantine Check Crack": ["Quarantine Check Crack"],
-    "Oil Dip OK": ["Oil Dip"],
-    "รอ Magna Flux - Blank Part": ["Sintering", "Sizing", "Machining"],
-    "Wait Magna Flux - Blank Part": ["Sintering", "Sizing", "Machining"],
-    "รอ Magna Flux - FG Part": ["Inspection"],
-    "Wait Magna Flux - FG Part": ["Inspection"],
-    "Magna Flux - Blank Part OK": ["Magna Flux"],
-    "Magna Flux - FG Part OK": ["Inspection"],
-    "Quarantine Magna Flux": ["Quarantine Magna Flux"],
-    "รอ Shot blast": ["Machining"],
-    "Wait Shot blast": ["Machining"],
-    "Quarantine Shot blast": ["Quarantine Shot blast"],
-    "รออัดน้ำมัน": ["Machining"],
-    "Wait อัดน้ำมัน": ["Machining"],
-    "รอ Sizing": ["Sintering", "Magna Flux"],
-    "Wait Sizing": ["Sintering", "Magna Flux"],
-    "Sizing OK": ["Sizing"],
-    "Quarantine Sizing": ["Quarantine Sizing"],
-    "Machining OK": ["Machining"],
-    "Quarantine NC Lathe": ["Quarantine Machining"],
-    "รอเจียร": ["Oil Impregnate"],
-    "เจียร OK": ["Machining"],
-    "Quarantine Grinding": ["Quarantine Machining"],
-    "รอส่ง Sub Con": ["Sintering", "Sizing", "Machining"],
-    "รับงาน OK - Sub con": ["Inspection"],
-    "รอ QC Check": ["Inspection"],
-    "รอ Inspection": ["Inspection"],
-    "Inspection OK": ["Inspection"],
-    "Quarantine Inspection": ["Quarantine Inspection"],
-    "รอ Pack": ["Packing"],
-    "Pack OK FG1": ["FG1"],
-    "Re - Oil": ["Packing"],
-    "Quarantine Pack": ["Packing"]
-  };
+  const rows = processRules[main] || [];
+  const matched = rows
+    .filter((row) => row.subValue === sub && row.status === status)
+    .map((row) => row.newStatus);
 
-  if (status === "รอ Machining" || status === "Wait Machining") {
-    if (main === "Machining" && sub === "NCL") {
-      return ["Sintering", "Check Crack"];
-    }
-    return ["Machining"];
-  }
-
-  if (status === "รอกลึง") return ["Machining"];
-  if (status === "กลึง OK") return ["Machining"];
-  if (status === "Magna Flux OK") return ["Magna Flux"];
-  if (status === "Sort OK") return ["Inspection"];
-  if (status === "รอ Sort") return ["Inspection"];
-  if (status === "Quarantine Sort") return ["Quarantine Inspection"];
-
-  return directMap[status] || [status];
+  return [...new Set(matched)];
 }
 
 function handleStatusChange() {
@@ -632,7 +658,7 @@ function handleStatusChange() {
   const fileName = document.getElementById("fileName").value.trim();
 
   // ✅ หาก dropdown ถูก disable ให้ส่ง "ไม่มี"
-  const subProcess = subProcessEl.disabled ? "ไม่มี" : subProcessEl.value.trim();
+  const subProcess = subProcessEl.value.trim();
   const status = statusEl.disabled
   ? (statusEl.options[statusEl.selectedIndex]?.value
      || statusEl.options[0]?.value
@@ -818,38 +844,19 @@ function handleSubProcessChange() {
   const main = document.getElementById("mainProcess").value;
   const subValue = document.getElementById("subProcess").value;
   const statusSelect = document.getElementById("status");
+  const rows = processRules[main] || [];
+  const statuses = [...new Set(rows.filter((row) => row.subValue === subValue).map((row) => row.status))];
+  statusSelect.innerHTML = "";
 
-  if (main !== "Sinter" && main !== "Finishing" && main !== "Machining") {
+  if (!subValue || statuses.length === 0) {
+    statusSelect.disabled = true;
+    statusSelect.style.backgroundColor = "#e5e7eb";
+    statusSelect.innerHTML = "<option value=''>-- เลือกสถานะ --</option>";
     handleStatusChange();
     return;
   }
 
-  const statusByMainAndSub = {
-    "Sinter": {
-      "S": ["Sinter OK", "Quarantine Sinter"],
-      "ESE": ["Check Crack OK", "Quarantine Check Crack"],
-      "OD": ["Oil Dip OK"]
-    },
-    "Finishing": {
-      "OD": ["Wait Machining"],
-      "SB": ["Wait Shot blast", "Wait Machining", "Quarantine Shot blast"],
-      "OG": ["Wait อัดน้ำมัน", "Wait Machining"],
-      "RP": ["Wait Sizing", "Sizing OK", "Quarantine Sizing"]
-    },
-    "Machining": {
-      "NCL": ["Wait Machining", "Machining OK", "Quarantine NC Lathe"],
-      "GC": ["รอเจียร", "เจียร OK", "Quarantine Grinding"]
-    }
-  };
-
-  const statuses = statusByMainAndSub[main]?.[subValue] || [];
-  statusSelect.innerHTML = "";
-
-  if (statuses.length === 0) {
-    statusSelect.disabled = true;
-    statusSelect.style.backgroundColor = "#e5e7eb";
-    statusSelect.innerHTML = "<option value=''>-- เลือกสถานะ --</option>";
-  } else if (statuses.length === 1) {
+  if (statuses.length === 1) {
     statusSelect.disabled = true;
     statusSelect.style.backgroundColor = "#e5e7eb";
     const option = document.createElement("option");
@@ -883,163 +890,49 @@ function handleMainProcessChange() {
   const fileNameInput = document.getElementById("fileName");
 
   sub.innerHTML = "";
-  statusSelect.innerHTML = "";
+  statusSelect.innerHTML = "<option value=''>-- เลือกสถานะ --</option>";
+  statusSelect.disabled = true;
+  statusSelect.style.backgroundColor = "#e5e7eb";
   newStatusSelect.innerHTML = "<option value=''>-- เลือกสถานะใหม่ --</option>";
   newStatusSelect.disabled = true;
   newStatusSelect.style.backgroundColor = "#e5e7eb";
   fileNameGroup.style.display = "none";
   fileNameInput.value = "";
 
-  const processMap = {
-    "Compacting": {
-      sub: [["P", "P - Compact"]],
-      status: [
-        "Green Part",
-        "Quarantine Green Part"
-      ]
-    },
-    "Sinter": {
-      sub: [
-        ["S", "S - Sinter"],
-        ["ESE", "ESE - Check Crack"],
-        ["OD", "OD - Oil Dip"]
-      ],
-      status: []
-    },
-    "Finishing": {
-      sub: [
-        ["OD", "OD - Oil Dip"],
-        ["SB", "SB - Shot blast"],
-        ["OG", "OG - Impreganate"],
-        ["RP", "RP - Sizing"]
-      ],
-      status: []
-    },
-    "Machining": {
-      sub: [
-        ["NCL", "NCL - NC Lathe"],
-        ["GC", "GC - Grinding"]
-      ],
-      status: []
-    },
-    "Delivery": {
-      sub: [["DELS", "DELS - Sub Con"]],
-      status: ["รอส่ง Sub Con"]
-    },
-    "Receiving": {
-      sub: [["RECS", "RECS - PC"]],
-      status: ["รับงาน OK - Sub con"]
-    },
-    "QC Check": {
-      sub: [["K", "K - QC Check"]],
-      status: ["รอ QC Check"]
-    },
-    "Sort": {
-      sub: [["SEL", "SEL - Sort"]],
-      status: ["รอ Inspection", "Inspection OK", "Quarantine Inspection"]
-    },
-    "Packing": {
-      sub: [["KON", "KON - Pack"]],
-      status: ["รอ Pack", "Pack OK FG1", "Re - Oil", "Quarantine Pack"]
-    },
-    "FG": {
-      sub: [["G1-FGPM", "G1-FGPM"]],
-      status: ["G1-FGPM"]
-    },
-    "Magna Flux": {
-      sub: [["SEM", "SEM - Magna Flux"]],
-      status: [
-        "Wait Magna Flux - Blank Part",
-        "Wait Magna Flux - FG Part",
-        "Magna Flux - Blank Part OK",
-        "Magna Flux - FG Part OK",
-        "Quarantine Magna Flux"
-      ]
-    },
-    "ผสมผง": {
-      sub: [["", "ไม่มี"]],
-      status: ["ผงเหล็ก(RM)", "ผงปั่น(Mix)"]
-    }
-  };
+  const rows = processRules[main] || [];
+  const subValues = [...new Set(rows.map((row) => row.subValue).filter(Boolean))];
 
-  const selected = processMap[main];
-
-  // ✅ SUB PROCESS
-  if (selected) {
-    const isNoSub =
-      selected.sub.length === 1 &&
-      (selected.sub[0][0] === "" || selected.sub[0][1] === "ไม่มี");
-
-    if (isNoSub) {
-      sub.disabled = true;
-      sub.style.backgroundColor = "#e5e7eb";
-      const option = document.createElement("option");
-      option.value = "";
-      option.text = "ไม่มี";
-      sub.appendChild(option);
-    } else {
-      sub.disabled = false;
-      sub.style.backgroundColor = "#ffffff";
-
-      if (selected.sub.length > 1) {
-        const defaultOption = document.createElement("option");
-        defaultOption.value = "";
-        defaultOption.text = "-- เลือกกระบวนการย่อย --";
-        sub.appendChild(defaultOption);
-      }
-
-      selected.sub.forEach(([value, label]) => {
-        const option = document.createElement("option");
-        option.value = value;
-        option.text = label;
-        sub.appendChild(option);
-      });
-    }
-  } else {
+  if (subValues.length === 0) {
     sub.disabled = true;
     sub.style.backgroundColor = "#e5e7eb";
     sub.innerHTML = "<option value=''>-- ไม่มีข้อมูล --</option>";
+    handleStatusChange();
+    return;
   }
 
-  // ✅ STATUS
-  const statuses = selected?.status || [];
-  statusSelect.innerHTML = "";
-
-  if (statuses.length === 1) {
-    statusSelect.disabled = true;
-    statusSelect.style.backgroundColor = "#e5e7eb";
+  if (subValues.length === 1) {
+    sub.disabled = true;
+    sub.style.backgroundColor = "#e5e7eb";
     const option = document.createElement("option");
-    option.value = statuses[0];
-    option.text = statuses[0];
-    statusSelect.appendChild(option);
-  } else if (statuses.length > 1) {
-    statusSelect.disabled = false;
-    statusSelect.style.backgroundColor = "#ffffff";
-
+    option.value = subValues[0];
+    option.text = subValues[0];
+    sub.appendChild(option);
+  } else {
+    sub.disabled = false;
+    sub.style.backgroundColor = "#ffffff";
     const defaultOption = document.createElement("option");
     defaultOption.value = "";
-    defaultOption.text = "-- เลือกสถานะ --";
-    statusSelect.appendChild(defaultOption);
-
-    statuses.forEach(status => {
+    defaultOption.text = "-- เลือกกระบวนการย่อย --";
+    sub.appendChild(defaultOption);
+    subValues.forEach((value) => {
       const option = document.createElement("option");
-      option.value = status;
-      option.textContent = status;
-      statusSelect.appendChild(option);
+      option.value = value;
+      option.text = value;
+      sub.appendChild(option);
     });
-  } else {
-    statusSelect.disabled = true;
-    statusSelect.style.backgroundColor = "#e5e7eb";
-    statusSelect.innerHTML = "<option value=''>ไม่มี</option>";
   }
 
-  if (main === "Sinter" || main === "Finishing" || main === "Machining") {
-    statusSelect.disabled = true;
-    statusSelect.style.backgroundColor = "#e5e7eb";
-    statusSelect.innerHTML = "<option value=''>-- เลือกสถานะ --</option>";
-  }
-
-  handleStatusChange();
+  handleSubProcessChange();
 }
 
 
