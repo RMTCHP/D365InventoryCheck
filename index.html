@@ -1,373 +1,160 @@
-<!DOCTYPE html>
+﻿<!doctype html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📦 บันทึก Inventory TAG</title>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
-    <style>
-        :root {
-            --primary-color: #2563eb;
-            --accent-color: #059669;
-            --accent-hover: #047857;
-            --success-color: #10b981;
-            --error-color: #dc2626;
-            --text-primary: #0f172a;
-            --text-secondary: #475569;
-            --border-color: #e2e8f0;
-            --background: #f8fafc;
-            --surface: #ffffff;
-            --radius-lg: 0.75rem;
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-            color: var(--text-primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            min-height: 100vh;
-        }
-
-        .container { width: 100%; max-width: 480px; }
-
-        .card {
-            background: var(--surface);
-            padding: 32px 24px;
-            border-radius: 1rem;
-            box-shadow: var(--shadow-lg);
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 24px;
-        }
-
-        .header h2 {
-            font-size: 24px;
-            font-weight: 700;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-label {
-            margin-bottom: 8px;
-            font-weight: 600;
-            display: block;
-        }
-
-        .barcode-row {
-            display: flex;
-            gap: 8px;
-        }
-
-        .form-control {
-            padding: 14px 16px;
-            width: 100%;
-            font-size: 16px;
-            border: 1.5px solid var(--border-color);
-            border-radius: var(--radius-lg);
-        }
-
-        button {
-            border: none;
-            border-radius: var(--radius-lg);
-            padding: 14px 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .btn-primary {
-            width: 100%;
-            background: var(--primary-color);
-            color: white;
-            margin-top: 16px;
-        }
-
-        .btn-scanner {
-            background: var(--accent-color);
-            color: white;
-            font-size: 20px;
-            min-width: 60px;
-        }
-
-        .btn-scanner:hover {
-            background: var(--accent-hover);
-        }
-
-        #scanner-view {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: #000;
-            z-index: 1000;
-        }
-
-        #scanner-container {
-            width: 100%;
-            height: 100%;
-            position: relative;
-        }
-
-        .scanner-ui {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            z-index: 1001;
-        }
-
-        .scanner-header, .scanner-footer {
-            padding: 20px;
-            color: white;
-            text-align: center;
-            background: rgba(0,0,0,0.5);
-        }
-
-        .btn-close-scanner {
-            background: rgba(220,38,38,0.9);
-            color: white;
-            border-radius: 50%;
-            width: 56px;
-            height: 56px;
-            font-size: 24px;
-        }
-
-        .scan-box {
-            position: absolute;
-            top: 45%;
-            left: 10%;
-            width: 80%;
-            height: 60px;
-            border: 3px solid red;
-            border-radius: 10px;
-            z-index: 1002;
-            box-shadow: 0 0 0 4000px rgba(0,0,0,0.6);
-        }
-
-        .scan-line {
-            position: absolute;
-            top: 45%;
-            left: 10%;
-            width: 80%;
-            height: 2px;
-            background: linear-gradient(to right, transparent, red, transparent);
-            animation: scan-move 2s infinite;
-            z-index: 1003;
-        }
-
-        @keyframes scan-move {
-            0% { top: 45%; }
-            50% { top: 50%; }
-            100% { top: 45%; }
-        }
-
-        .scan-guide-text {
-            position: absolute;
-            top: 38%;
-            width: 100%;
-            text-align: center;
-            color: #fff;
-            font-size: 16px;
-            font-weight: 500;
-            z-index: 1004;
-        }
-
-        /* เพิ่ม CSS นี้เพื่อซ่อนลูกศรขึ้น/ลงใน input type="number" */
-        input[type="number"]::-webkit-inner-spin-button,
-        input[type="number"]::-webkit-outer-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        input[type="number"] {
-            -moz-appearance: textfield; /* สำหรับ Firefox */
-        }
-        #video-preview {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ระบบตรวจรอบ รปภ</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/html5-qrcode" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
+  <script src="app.js" defer></script>
 </head>
 <body>
-    <div class="container">
-        <div class="card" id="main-view">
-            <div class="header"><h2>📦 บันทึก Inventory TAG</h2></div>
-
-            <div class="form-group">
-                <label class="form-label">รหัสบาร์โค้ด</label>
-                <div class="barcode-row">
-                    <input type="text" id="barcode" class="form-control" placeholder="กดปุ่มสีเขียวเพื่อสแกนบาร์โค้ด" readonly>
-                    <button class="btn-scanner" onclick="startScanner()">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M2 4h2v16H2V4zm3 0h1v16H5V4zm2 0h2v16H7V4zm3 0h1v16h-1V4zm2 0h3v16h-3V4zm4 0h1v16h-1V4zm2 0h2v16h-2V4z"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">จำนวน</label>
-                <input type="number" 
-                       id="quantity" 
-                       class="form-control" 
-                       placeholder="ระบุจำนวน"
-                       inputmode="numeric"  pattern="[0-9]*"     >
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">ชื่อผู้สแกน</label>
-                <input type="text" id="scanner" class="form-control" placeholder="ชื่อผู้สแกน">
-            </div>
-
-            <button class="btn-primary" onclick="submitBarcode()">💾 บันทึกข้อมูล</button>
+  <main class="mobile-app">
+    <header class="topbar">
+      <div class="topbar-main">
+        <p class="topbar-label">GUARD TOUR SYSTEM</p>
+        <h1 class="topbar-title">ระบบตรวจรอบ รปภ</h1>
+        <p id="todayText" class="topbar-sub"></p>
+      </div>
+      <div id="guardBadge" class="guard-badge hidden">
+        <div id="guardAvatar" class="guard-avatar">ร</div>
+        <div class="guard-meta">
+          <strong id="guardNameText">เจ้าหน้าที่</strong>
         </div>
-    </div>
+      </div>
+    </header>
 
-    <div id="scanner-view" style="display:none;">
-        <video id="video-preview" autoplay muted playsinline></video>
-        <div class="scanner-ui">
-            <div class="scanner-header"><h3>กำลังสแกนบาร์โค้ด</h3></div>
-            <div class="scanner-footer">
-                <button class="btn-close-scanner" onclick="stopScanner()">✕</button>
-            </div>
-            <div class="scan-guide-text">เล็งบาร์โค้ดให้อยู่ในกรอบ</div>
-            <div class="scan-box"></div>
-            <div class="scan-line"></div>
+    <section id="view-login" class="screen active">
+      <div class="panel auth-panel">
+        <h2>เข้าสู่ระบบ รปภ</h2>
+        <p class="hint">กรอกรหัส รปภ เพื่อเริ่มงาน</p>
+        <label for="guardId">รหัส รปภ</label>
+        <input id="guardId" type="text" placeholder="เช่น G001" autocomplete="off">
+        <button id="loginBtn" class="btn btn-primary">เข้าสู่ระบบ</button>
+        <p id="loginStatus" class="status-text"></p>
+      </div>
+    </section>
+
+    <section id="view-shifts" class="screen">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>เส้นทางของฉันวันนี้</h2>
+          <button id="logoutBtn" class="icon-btn" title="ออกจากระบบ" aria-label="ออกจากระบบ">⎋</button>
         </div>
-    </div>
+        <p class="hint">ระบบจะแสดงเทมเพลตที่ผูกกับรหัส รปภ อัตโนมัติ</p>
+        <div id="shiftList" class="shift-cards"></div>
+      </div>
+    </section>
 
-    <audio id="beep" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" preload="auto"></audio>
+    <section id="view-tour" class="screen">
+      <div class="panel">
+        <div class="panel-head">
+          <h2 id="tourTitle">รอบตรวจ</h2>
+          <button id="backToCheckpointListBtn" class="tour-head-icon hidden" type="button" aria-label="กลับไปรายการจุด" title="กลับไปรายการจุด">←</button>
+        </div>
 
-    <script>
-        const apiURL = "https://script.google.com/macros/s/AKfycbwQ5E0eX2RQ_VwK6HBN6E10LNoZCKlUBFZxvT23VEu5k66EZV74Kel7KGssxJ-8SSsv/exec";
-        let codeReader;
+        <div class="kpi-row">
+          <div class="kpi-card">
+            <span>ทั้งหมด</span>
+            <strong id="statTotal">0</strong>
+          </div>
+          <div class="kpi-card">
+            <span>ตรวจแล้ว</span>
+            <strong id="statDone">0</strong>
+          </div>
+        </div>
 
-        async function startScanner() {
-            document.getElementById("main-view").style.display = "none";
-            document.getElementById("scanner-view").style.display = "block";
+        <div id="checkpointListPanel" class="step-card">
+          <h3>รายการจุดตรวจ</h3>
+          <div id="roundTabs" class="chips"></div>
+          <div id="checkpointList" class="checkpoint-list"></div>
+        </div>
 
-            codeReader = new ZXing.BrowserMultiFormatReader();
-            const videoElem = document.getElementById("video-preview");
+        <div id="checkinActionPanel" class="hidden">
+          <p id="currentPointText" class="hint">เลือกจุดตรวจจากรายการด้านล่างก่อน</p>
 
-            try {
-                // พยายามใช้กล้องหลัง (environment-facing) ก่อน
-                const constraints = {
-                    video: {
-                        facingMode: 'environment'
-                    }
-                };
-                
-                await codeReader.decodeFromConstraints(constraints, videoElem, (result, err) => {
-                    if (result) {
-                        document.getElementById("barcode").value = result.text;
-                        document.getElementById("beep").play();
-                        stopScanner();
-                    }
-                    // หาก err ไม่ใช่ NotFoundException (เช่นไม่มี barcode ในภาพ) ไม่ต้องทำอะไร
-                });
-            } catch (err) {
-                console.error("Error accessing camera with 'environment' facing mode:", err);
-                // หากไม่สามารถเข้าถึงกล้องหลังได้ (เช่น ไม่มีกล้องหลัง หรือผู้ใช้ปฏิเสธสิทธิ์)
-                // จะลองใช้วิธีเดิมคือเลือกอุปกรณ์ตัวแรกที่เจอ
-                try {
-                    const devices = await codeReader.listVideoInputDevices();
-                    if (devices.length > 0) {
-                        const selectedDeviceId = devices[0].deviceId; // เลือกอุปกรณ์ตัวแรก
-                        await codeReader.decodeFromVideoDevice(selectedDeviceId, videoElem, (result, err) => {
-                            if (result) {
-                                document.getElementById("barcode").value = result.text;
-                                document.getElementById("beep").play();
-                                stopScanner();
-                            }
-                        });
-                    } else {
-                        Swal.fire("ไม่พบอุปกรณ์กล้อง", "ไม่พบกล้องในระบบ กรุณาตรวจสอบการเชื่อมต่อกล้อง", "error");
-                        stopScanner();
-                    }
-                } catch (fallbackErr) {
-                    console.error("Error during camera fallback:", fallbackErr);
-                    Swal.fire("ไม่สามารถเปิดกล้องได้", "กรุณาตรวจสอบการอนุญาตเข้าถึงกล้อง หรือลองใหม่อีกครั้ง (" + fallbackErr.message + ")", "error");
-                    stopScanner();
-                }
-            }
-        }
+          <div id="quickActionCards" class="quick-grid">
+            <button id="actionQrCard" type="button" class="quick-card">
+              <span class="quick-icon">▦</span>
+              <span class="quick-title">สแกน QR</span>
+              <span id="qrStepStatus" class="quick-sub">ยังไม่สแกน</span>
+            </button>
+            <button id="actionGpsCard" type="button" class="quick-card">
+              <span class="quick-icon">📷</span>
+              <span class="quick-title">ถ่ายรูป</span>
+              <span id="gpsStepStatus" class="quick-sub">ยังไม่ถ่าย</span>
+            </button>
+            <button id="actionIncidentCard" type="button" class="quick-card">
+              <span class="quick-icon">!</span>
+              <span class="quick-title">แจ้งเหตุ</span>
+              <span id="incidentStepStatus" class="quick-sub">รอข้อมูลให้ครบ</span>
+            </button>
+          </div>
 
-        function stopScanner() {
-            if (codeReader) {
-                codeReader.reset();
-            }
-            document.getElementById("scanner-view").style.display = "none";
-            document.getElementById("main-view").style.display = "block";
-        }
+        <div id="detailGpsPhoto" class="step-card hidden">
+          <h3>ถ่ายรูป</h3>
+          <button id="gpsBtn" class="btn btn-soft">ใช้ตำแหน่งปัจจุบัน</button>
+          <p id="gpsText" class="hint">ยังไม่โหลด GPS</p>
+          <input id="photoInput" type="file" accept="image/*" capture="environment">
+          <img id="photoPreview" class="preview hidden" alt="ภาพตัวอย่าง">
+          <p id="checkpointStatus" class="status-text"></p>
+        </div>
 
-        async function submitBarcode() {
-            const barcode = document.getElementById("barcode").value.trim();
-            const quantity = document.getElementById("quantity").value.trim();
-            const scanner = document.getElementById("scanner").value.trim();
+          <div id="detailIncident" class="step-card hidden">
+            <h3>ยืนยันจุดตรวจ / แจ้งเหตุ</h3>
+            <div class="incident-choice-row">
+              <button id="incidentChoiceNone" type="button" class="incident-choice-card active">
+                <span class="incident-choice-icon">✔</span>
+                <span class="incident-choice-text">ไม่มี</span>
+              </button>
+              <button id="incidentChoiceHas" type="button" class="incident-choice-card">
+                <span class="incident-choice-icon">⚠</span>
+                <span class="incident-choice-text">มี</span>
+              </button>
+            </div>
+            <div id="incidentExtraFields" class="hidden">
+              <textarea id="incidentDetail" rows="3" placeholder="รายละเอียด"></textarea>
+            </div>
+            <button id="submitIncidentBtn" class="btn btn-warning">ยืนยันและบันทึก</button>
+            <p id="incidentStatus" class="status-text"></p>
+          </div>
+        </div>
 
-            if (!barcode || !quantity || !scanner) {
-                Swal.fire({ icon: "error", title: "กรอกข้อมูลไม่ครบ", text: "กรุณากรอกข้อมูลให้ครบทุกช่อง" });
-                return;
-            }
+      </div>
+    </section>
 
-            // ตรวจสอบว่า quantity เป็นตัวเลขเท่านั้น
-            if (!/^\d+$/.test(quantity) || Number(quantity) <= 0) { // Regex เพื่อให้แน่ใจว่าเป็นตัวเลขเต็มเท่านั้น
-                Swal.fire({ icon: "warning", title: "จำนวนไม่ถูกต้อง", text: "กรุณาระบุจำนวนเป็นตัวเลขเต็มบวก" });
-                return;
-            }
+    <section id="view-dashboard" class="screen">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>สรุปงาน</h2>
+          <button id="syncNowBtn" class="btn btn-soft">ซิงก์ข้อมูล</button>
+        </div>
 
-            const confirm = await Swal.fire({
-                title: "ยืนยันข้อมูลก่อนบันทึก",
-                html: `
-                    <p><strong>📦 Barcode:</strong> ${barcode}</p>
-                    <p><strong>🔢 จำนวน:</strong> ${quantity}</p>
-                    <p><strong>👤 ผู้สแกน:</strong> ${scanner}</p>
-                `,
-                icon: "question",
-                showCancelButton: true,
-                confirmButtonText: "✅ ยืนยัน",
-                cancelButtonText: "❌ ยกเลิก"
-            });
+        <div class="kpi-row">
+          <div class="kpi-card"><span>กะงานวันนี้</span><strong id="dbShiftTotal">0</strong></div>
+          <div class="kpi-card"><span>ปิดแล้ว</span><strong id="dbShiftClosed">0</strong></div>
+          <div class="kpi-card"><span>คิวออฟไลน์</span><strong id="dbQueueCount">0</strong></div>
+          <div class="kpi-card"><span>ซิงก์ล่าสุด</span><strong id="dbLastSync">-</strong></div>
+        </div>
 
-            if (!confirm.isConfirmed) return;
+        <div class="step-card">
+          <h3>ปิดกะงาน</h3>
+          <p id="activeShiftText" class="hint">ยังไม่ได้เลือกกะงาน</p>
+          <button id="closeShiftBtn" class="btn btn-warning" type="button">ปิดกะและสรุปผล</button>
+          <p id="closeShiftResult" class="status-text"></p>
+        </div>
 
-            Swal.fire({ title: "กำลังบันทึกข้อมูล...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        <div id="dashboardList" class="shift-cards"></div>
+      </div>
+    </section>
 
-            try {
-                const res = await fetch(`${apiURL}?page=submitBarcode&barcode=${barcode}&quantity=${quantity}&scanner=${scanner}`, {
-                    method: "POST"
-                });
-                const data = await res.json();
-
-                if (data.success) {
-                    Swal.fire({ icon: "success", title: "✅ บันทึกสำเร็จ", text: data.message, timer: 2000, showConfirmButton: false });
-                    document.getElementById("barcode").value = "";
-                    document.getElementById("quantity").value = "";
-                   
-                } else {
-                    Swal.fire({ icon: "error", title: "เกิดข้อผิดพลาด", text: data.message });
-                }
-            } catch (err) {
-                Swal.fire({ icon: "error", title: "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์", text: "กรุณาลองใหม่อีกครั้ง" });
-                console.error(err);
-            }
-        }
-    </script>
+    <nav id="bottomNav" class="bottom-nav hidden">
+      <button id="navTour" class="nav-btn active" disabled>ตรวจสอบ</button>
+      <button id="navDashboard" class="nav-btn">สรุป</button>
+      <button id="openDashboardBtn" class="hidden" aria-hidden="true"></button>
+      <button id="backFromDashboardBtn" class="hidden" aria-hidden="true"></button>
+    </nav>
+  </main>
 </body>
 </html>
