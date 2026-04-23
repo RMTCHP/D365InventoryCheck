@@ -325,16 +325,15 @@
               <select id="mainProcess">
                 <option value="">ทุกกระบวนการ</option>
                 <option value="ผสมผง">ผสมผง</option>
-                <option value="Compacting">Compacting</option>
-                <option value="Sinter">Sinter</option>
-                <option value="Finishing">Finishing</option>
-                <option value="Machining">Machining</option>
-                <option value="Delivery">Delivery</option>
-                <option value="Receiving">Receiving</option>
-                <option value="QC Check">QC Check</option>
-                <option value="Sort">Sort</option>
-                <option value="Packing">Packing</option>
-                <option value="Magna Flux">Magna Flux</option>
+                <option value="Sinter (S)">Sinter (S)</option>
+                <option value="Steam 1 (STE,TEM)">Steam 1 (STE,TEM)</option>
+                <option value="Finishing Area 1 (RP,RO,OD,OG,BR,ESE,SB)">Finishing Area 1 (RP,RO,OD,OG,BR,ESE,SB)</option>
+                <option value="Sub-Store 1 (HT,UT,L,MC,NCL,SEM)">Sub-Store 1 (HT,UT,L,MC,NCL,SEM)</option>
+                <option value="Machining (D,F,L,MC,NCL,GC,UT)">Machining (D,F,L,MC,NCL,GC,UT)</option>
+                <option value="Finishing Area 2">Finishing Area 2</option>
+                <option value="Steam 2 (STE)">Steam 2 (STE)</option>
+                <option value="Sub-Store 2 (STE , K)">Sub-Store 2 (STE , K)</option>
+                <option value="Sorting &amp; Packing Area (SEM,SEMT,SEL,K,KON)">Sorting &amp; Packing Area (SEM,SEMT,SEL,K,KON)</option>
                 <option value="FG">FG</option>
               </select>
             </div>
@@ -563,7 +562,19 @@
         const uniqueScanner = [...new Set(data.map((row) => row.Scanner))].length;
 
         // 🟢 G1P process set aligned with qrg1p.html
-        const allProcesses = ['ผสมผง','Compacting','Sinter','Finishing','Machining','Delivery','Receiving','QC Check','Sort','Packing','Magna Flux','FG'];
+        const allProcesses = [
+          'ผสมผง',
+          'Sinter (S)',
+          'Steam 1 (STE,TEM)',
+          'Finishing Area 1 (RP,RO,OD,OG,BR,ESE,SB)',
+          'Sub-Store 1 (HT,UT,L,MC,NCL,SEM)',
+          'Machining (D,F,L,MC,NCL,GC,UT)',
+          'Finishing Area 2',
+          'Steam 2 (STE)',
+          'Sub-Store 2 (STE , K)',
+          'Sorting & Packing Area (SEM,SEMT,SEL,K,KON)',
+          'FG'
+        ];
 
         const processCount = {};
         allProcesses.forEach((p) => processCount[p] = 0);
