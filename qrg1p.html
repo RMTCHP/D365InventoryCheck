@@ -381,6 +381,7 @@
   <option value="Finishing Area 2">Finishing Area 2</option>
   <option value="Steam 2 (STE)">Steam 2 (STE)</option>
   <option value="Sub-Store 2 (STE , K)">Sub-Store 2 (STE , K)</option>
+  <option value="Rework Area (SELD)">Rework Area (SELD)</option>
   <option value="Sorting &amp; Packing Area (SEM,SEMT,SEL,K,KON)">Sorting &amp; Packing Area (SEM,SEMT,SEL,K,KON)</option>
   <option value="FG">FG</option>
 </select>
@@ -512,7 +513,7 @@ const processRules = {
   ],
   "Steam 1 (STE,TEM)": [
     { status: "B/F Steam (Si)", subValue: "Si", newStatus: "B/F Steam" },
-    { status: "Quarantine (Si)", subValue: "Si", newStatus: "Quarantine" }
+    { status: "Quarantine Steam 1 (STE,TEM) (Si)", subValue: "Si", newStatus: "Quarantine" }
   ],
   "Finishing Area 1 (RP,RO,OD,OG,BR,ESE,SB)": [
     { status: "B/F Sizing (Fi)", subValue: "Fi", newStatus: "B/F Sizing" },
@@ -524,7 +525,7 @@ const processRules = {
     { status: "B/F Shot blast (Fi)", subValue: "Fi", newStatus: "B/F Shot blast" },
     { status: "A/F Shot blast (Fi)", subValue: "Fi", newStatus: "A/F Shot blast" },
     { status: "OK (Blank Wait for Sub-Contract) (Fi)", subValue: "Fi", newStatus: "OK (Blank Wait for Sub-Contract)" },
-    { status: "Quarantine (Fi)", subValue: "Fi", newStatus: "Quarantine" }
+    { status: "Quarantine Finishing Area 1 (RP,RO,OD,OG,BR,ESE,SB) (Fi)", subValue: "Fi", newStatus: "Quarantine" }
   ],
   "Sub-Store 1 (HT,UT,L,MC,NCL,SEM)": [
     { status: "Blank Wait for Sub-Contract (Fi)", subValue: "Fi", newStatus: "Blank Wait for Sub-Contract" },
@@ -541,7 +542,7 @@ const processRules = {
     { status: "Blank Wait for Machining (Grinding) (Ma)", subValue: "Ma", newStatus: "Blank Wait for Machining (Grinding)" },
     { status: "Blank Wait for Sub-Contract (Su)", subValue: "Su", newStatus: "Blank Wait for Sub-Contract" },
     { status: "Blank Wait for Steam (Su)", subValue: "Su", newStatus: "Blank Wait for Steam" },
-    { status: "Quarantine (Ma)", subValue: "Ma", newStatus: "Quarantine" },
+    { status: "Quarantine Machining (D,F,L,MC,NCL,GC,UT) (Ma)", subValue: "Ma", newStatus: "Quarantine" },
     { status: "Blank Wait for Machining A/F HT/BR/OP3 (Ma)", subValue: "Ma", newStatus: "Blank Wait for Machining A/F HT/BR/OP3" }
   ],
   "Finishing Area 2": [
@@ -552,18 +553,21 @@ const processRules = {
   "Steam 2 (STE)": [
     { status: "B/F Steam  (Su)", subValue: "Su", newStatus: "B/F Steam" },
     { status: "A/F Steam (Wait for Sub-Contract)  (Ma)", subValue: "Ma", newStatus: "A/F Steam (Wait for Sub-Contract)" },
-    { status: "Quarantine (Ma)", subValue: "Ma", newStatus: "Quarantine" }
+    { status: "Quarantine Steam 2 (STE) (Ma)", subValue: "Ma", newStatus: "Quarantine" }
   ],
   "Sub-Store 2 (STE , K)": [
-    { status: "Wait  for  (So)", subValue: "So", newStatus: "Wait  for" },
-    { status: "Quarantine (So)", subValue: "So", newStatus: "Quarantine" }
+    { status: "Wait  for Sorting  (So)", subValue: "So", newStatus: "Wait  for Sorting" },
+    { status: "Quarantine Sub-Store 2 (STE , K) (So)", subValue: "So", newStatus: "Quarantine" }
+  ],
+  "Rework Area (SELD)": [
+    { status: "Rework Blank Part (Sorting before send sub-con) (Fi)", subValue: "Fi", newStatus: "Rework Blank Part (Sorting before send sub-con)" }
   ],
   "Sorting & Packing Area (SEM,SEMT,SEL,K,KON)": [
     { status: "Wait for Magna Flux (Blank Part)  (Fi)", subValue: "Fi", newStatus: "Wait for Magna Flux (Blank Part)" },
     { status: "Magna Flux O.K (Blank Part) (Fi)", subValue: "Fi", newStatus: "Magna Flux O.K (Blank Part)" },
-    { status: "Wait for Magna Flux (A/F Machining 1 ) (Fi)", subValue: "Fi", newStatus: "Wait for Magna Flux (A/F Machining 1 )" },
+    { status: "Wait for Magna Flux (A/F Machining 1 ) (SU)", subValue: "SU", newStatus: "Wait for Magna Flux (A/F Machining 1 )" },
     { status: "Magna Flux O.K (A/F Machining 1) (Su)", subValue: "Su", newStatus: "Magna Flux O.K (A/F Machining 1)" },
-    { status: "Wait for Magna Flux (Sorting Part) (Su)", subValue: "Su", newStatus: "Wait for Magna Flux (Sorting Part)" },
+    { status: "Wait for Magna Flux (Sorting Part) (So)", subValue: "So", newStatus: "Wait for Magna Flux (Sorting Part)" },
     { status: "Magna Flux O.K (Sorting Part) (So)", subValue: "So", newStatus: "Magna Flux O.K (Sorting Part)" },
     { status: "Quarantine Magna Flux (So)", subValue: "So", newStatus: "Quarantine Magna Flux" },
     { status: "Wait  for Sorting 100% (SELD) (So)", subValue: "So", newStatus: "Wait  for Sorting 100% (SELD)" },
@@ -574,6 +578,7 @@ const processRules = {
     { status: "Quarantine Pack (So)", subValue: "So", newStatus: "Quarantine Pack" }
   ],
   "FG": [
+    { status: "G1-FG1", subValue: "G1-FG1", newStatus: "G1-FG1" },
     { status: "G1-FGPM", subValue: "G1-FGPM", newStatus: "G1-FGPM" }
   ]
 };
@@ -747,7 +752,7 @@ function handleStatusChange() {
   });
 
   try {
-    const res = await fetch(`${apiURL}?page=submitBarcode&barcode=${barcode}&quantity=${quantity}&scanner=${scanner}&mainProcess=${mainProcess}&subProcess=${subProcess}&status=${newStatus}&fileName=${fileName}`, {
+    const res = await fetch(`${apiURL}?page=submitBarcode&barcode=${barcode}&quantity=${quantity}&scanner=${scanner}&mainProcess=${mainProcess}&subProcess=${subProcess}&status=${status}&fileName=${fileName}`, {
       method: "POST"
     });
     const data = await res.json();
