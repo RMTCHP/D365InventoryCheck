@@ -25,7 +25,7 @@
       --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
     html, body { height: 100%; }
-    body { font-family: Inter, sans-serif; background: var(--bg); color: var(--text); overflow-y: auto; overflow-x: hidden; }
+    body { font-family: Inter, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; }
     .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
     .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
@@ -142,7 +142,20 @@
       transition: all .2s ease;
     }
     .btn-expand:hover { background: #f8fafc; color: #0f172a; border-color: #94a3b8; }
-    .container { max-width: 1440px; min-height: 100vh; margin: 0 auto; padding: 1.5rem; display: flex; flex-direction: column; }
+    .btn-export {
+      border: 1px solid #0f172a;
+      background: #1e293b;
+      color: #ffffff;
+      border-radius: 10px;
+      padding: 9px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 6px 14px -8px rgba(15, 23, 42, 0.7);
+      transition: all .18s ease;
+    }
+    .btn-export:hover { background: #0f172a; border-color: #0f172a; transform: translateY(-1px); box-shadow: 0 10px 18px -10px rgba(15, 23, 42, 0.9); }
+    .container { max-width: 1440px; height: 100vh; margin: 0 auto; padding: 1.5rem; display: grid; grid-template-rows: auto 1fr; gap: 0.75rem; }
     .header {
       background: var(--primary);
       border-radius: 20px;
@@ -172,7 +185,7 @@
       transition: all .2s ease;
     }
     .btn-manual:hover { background: rgba(255,255,255,.32); transform: translateY(-1px); }
-    .main-flex { display: flex; gap: 1rem; align-items: flex-start; min-height: 0; flex: 1; }
+    .main-flex { display: grid; grid-template-columns: minmax(260px, 21%) 1fr; gap: 1rem; min-height: 0; overflow: hidden; }
     .controls-section {
       flex: 0 0 20%;
       max-width: 21%;
@@ -183,8 +196,9 @@
       border-radius: 16px;
       border: 1px solid var(--border);
       box-shadow: var(--shadow);
-      height: auto;
-      overflow: visible;
+      height: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
     }
     .tab-container {
       width: 100%;
@@ -196,24 +210,24 @@
       border-radius: 16px;
       border: 1px solid var(--border);
       box-shadow: var(--shadow);
-      height: auto;
+      height: 100%;
       min-height: 0;
-      overflow: visible;
+      overflow: hidden;
     }
     .right-panel {
-      flex: 1 1 0;
       min-width: 0;
       min-height: 0;
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
-      overflow: visible;
+      overflow: hidden;
+      height: 100%;
     }
     #summaryCards { flex: 0 0 auto; }
-    #resultPanel { flex: 1 1 auto; height: auto; min-height: 0; display: flex; flex-direction: column; }
+    #resultPanel { height: 100%; min-height: 0; display: flex; flex-direction: column; }
     #tabTable, #tabChart { flex: 1 1 auto; min-height: 0; }
-    #tabTable { overflow: visible; max-height: none; }
-    #tabChart { overflow: visible; max-height: none; }
+    #tabTable { overflow-y: auto; overflow-x: hidden; height: 100%; }
+    #tabChart { overflow: hidden; }
     #tabTable {
       padding-bottom: 2.75rem !important;
       scroll-padding-bottom: 2.75rem;
@@ -226,10 +240,14 @@
     #tabTable table tbody tr { transition: background-color .15s ease; }
     #tabTable table tbody tr:nth-child(even) { background: #fbfdff; }
     #tabTable table tbody tr:hover { background: #eef4ff; }
+    #tabTable::-webkit-scrollbar { width: 10px; }
+    #tabTable::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 999px; }
     .chart-canvas-wrap { position: relative; height: 240px; }
     @media (max-width: 900px) {
-      .main-flex { flex-direction: column; height: auto; min-height: unset; }
-      .controls-section, .tab-container { max-width: 100%; width: 100%; height: auto; overflow-y: unset; }
+      .container { height: auto; min-height: 100vh; grid-template-rows: auto auto; }
+      .main-flex { grid-template-columns: 1fr; height: auto; min-height: unset; overflow: visible; }
+      .controls-section, .tab-container, .right-panel { max-width: 100%; width: 100%; height: auto; overflow: visible; }
+      #tabTable { overflow: visible; height: auto; }
     }</style>
 </head>
 <body>
@@ -293,9 +311,12 @@
 
         <section class="tab-container min-h-0">
         <div id="resultPanel" class="overflow-hidden">
-          <div class="flex border-b border-slate-200 bg-[var(--surface-low)] px-3">
-            <button id="tabTableBtn" class="px-8 py-4 text-base font-semibold border-b-2 border-[var(--primary)] text-[var(--primary)]">Data Table</button>
-            <button id="tabChartBtn" class="px-8 py-4 text-base font-semibold text-slate-500">Analytics & Insights</button>
+          <div class="flex items-center justify-between border-b border-slate-200 bg-[var(--surface-low)] px-3">
+            <div class="flex items-center">
+              <button id="tabTableBtn" class="px-8 py-4 text-base font-semibold border-b-2 border-[var(--primary)] text-[var(--primary)]">Data Table</button>
+              <button id="tabChartBtn" class="px-8 py-4 text-base font-semibold text-slate-500">Analytics & Insights</button>
+            </div>
+            <button id="exportExcelBtn" class="btn-export">Export Excel</button>
           </div>
 
           <div id="tabTable" class="p-8">
@@ -539,9 +560,12 @@
     function renderCharts(rows) {
       const match = rows.filter((x) => x.status === "MATCH").length;
       const mismatch = rows.length - match;
-      const sumActual = rows.reduce((s, x) => s + x.actual, 0);
-      const sumWms = rows.reduce((s, x) => s + x.wms, 0);
-      const sumD365 = rows.reduce((s, x) => s + x.d365, 0);
+      const hasActual = rows.some((x) => x.actual != null);
+      const hasWms = rows.some((x) => x.wms != null);
+      const hasD365 = rows.some((x) => x.d365 != null);
+      const sumActual = hasActual ? rows.reduce((s, x) => s + (x.actual ?? 0), 0) : 0;
+      const sumWms = hasWms ? rows.reduce((s, x) => s + (x.wms ?? 0), 0) : 0;
+      const sumD365 = hasD365 ? rows.reduce((s, x) => s + (x.d365 ?? 0), 0) : 0;
 
       if (resultPieChart) resultPieChart.destroy();
       if (sourceBarChart) sourceBarChart.destroy();
@@ -555,66 +579,92 @@
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom" } }, cutout: "65%" }
       });
 
+      const labels = [];
+      const qtyValues = [];
+      const qtyColors = [];
+      if (hasWms) { labels.push("WMS"); qtyValues.push(sumWms); qtyColors.push("#1b6b51"); }
+      if (hasD365) { labels.push("D365"); qtyValues.push(sumD365); qtyColors.push("#6366f1"); }
+      if (hasActual) { labels.push("ACTUAL"); qtyValues.push(sumActual); qtyColors.push("#1e293b"); }
+
+      const datasets = hasActual
+        ? [
+            {
+              type: "bar",
+              label: "Quantity",
+              data: qtyValues,
+              backgroundColor: qtyColors,
+              borderRadius: 8,
+              yAxisID: "y",
+              categoryPercentage: 0.62,
+              barPercentage: 0.78
+            }
+          ]
+        : [
+            {
+              type: "bar",
+              label: "WMS",
+              data: [hasWms ? sumWms : null, null],
+              backgroundColor: "#1b6b51",
+              borderRadius: 8,
+              yAxisID: "y",
+              categoryPercentage: 0.62,
+              barPercentage: 0.78
+            },
+            {
+              type: "bar",
+              label: "D365",
+              data: [null, hasD365 ? sumD365 : null],
+              backgroundColor: "#6366f1",
+              borderRadius: 8,
+              yAxisID: "y",
+              categoryPercentage: 0.62,
+              barPercentage: 0.78
+            }
+          ];
+
+      if (hasActual) {
+        const gapValues = labels.map((lb) => {
+          if (lb === "WMS") return Math.abs(sumActual - sumWms);
+          if (lb === "D365") return Math.abs(sumActual - sumD365);
+          return 0;
+        });
+        const pctValues = labels.map((lb) => {
+          if (lb === "WMS") return sumActual > 0 ? (sumWms / sumActual) * 100 : 0;
+          if (lb === "D365") return sumActual > 0 ? (sumD365 / sumActual) * 100 : 0;
+          return 100;
+        });
+
+        datasets.push(
+          {
+            type: "bar",
+            label: "Gap",
+            data: gapValues,
+            backgroundColor: "#ef4444",
+            borderRadius: 8,
+            yAxisID: "y",
+            categoryPercentage: 0.62,
+            barPercentage: 0.78
+          },
+          {
+            type: "line",
+            label: "% Complete",
+            data: pctValues,
+            borderColor: "#d97706",
+            backgroundColor: "#d97706",
+            pointBackgroundColor: "#d97706",
+            pointRadius: 4,
+            pointHoverRadius: 5,
+            tension: 0.35,
+            yAxisID: "yPercent"
+          }
+        );
+      }
+
       sourceBarChart = new Chart(document.getElementById("sourceBar"), {
         type: "bar",
         data: {
-          labels: ["Actual", "WMS", "D365"],
-          datasets: [
-            {
-              type: "bar",
-              label: "Actual",
-              data: [sumActual, sumWms, sumD365],
-              backgroundColor: ["#1e293b", "#1b6b51", "#6366f1"],
-              borderRadius: 8,
-              yAxisID: "y",
-              categoryPercentage: 0.62,
-              barPercentage: 0.78
-            },
-            {
-              type: "line",
-              label: "WMS",
-              data: [],
-              borderColor: "#1b6b51",
-              backgroundColor: "#1b6b51",
-              pointStyle: "circle",
-              showLine: false
-            },
-            {
-              type: "line",
-              label: "D365",
-              data: [],
-              borderColor: "#6366f1",
-              backgroundColor: "#6366f1",
-              pointStyle: "circle",
-              showLine: false
-            },
-            {
-              type: "bar",
-              label: "Gap",
-              data: [0, Math.abs(sumActual - sumWms), Math.abs(sumActual - sumD365)],
-              backgroundColor: "#ef4444",
-              borderRadius: 8,
-              yAxisID: "y",
-              categoryPercentage: 0.62,
-              barPercentage: 0.78
-            },
-            {
-              type: "line",
-              label: "% Complete",
-              data: [
-                100,
-                sumActual > 0 ? (sumWms / sumActual) * 100 : 0,
-                sumActual > 0 ? (sumD365 / sumActual) * 100 : 0
-              ],
-              borderColor: "#d97706",
-              backgroundColor: "#d97706",
-              pointBackgroundColor: "#d97706",
-              pointRadius: 4,
-              pointHoverRadius: 5,
-              tension: 0.35,
-              yAxisID: "yPercent"
-            }
-          ]
+          labels,
+          datasets
         },
         options: {
           responsive: true,
@@ -625,6 +675,7 @@
           scales: {
             y: { beginAtZero: true, title: { display: true, text: "Quantity" } },
             yPercent: {
+              display: hasActual,
               position: "right",
               min: 0,
               max: 100,
@@ -807,7 +858,49 @@
       setInterval(tick, 1000);
     }
 
+    function getCurrentRowsByFilter() {
+      let rows = allResultRows;
+      if (currentFilter === "match") rows = rows.filter((x) => x.status === "MATCH");
+      if (currentFilter === "mismatch") rows = rows.filter((x) => x.status === "MISMATCH");
+      return rows;
+    }
+
+    function getExportTimestamp() {
+      const d = new Date();
+      const pad = (n) => String(n).padStart(2, "0");
+      const yyyy = d.getFullYear();
+      const mm = pad(d.getMonth() + 1);
+      const dd = pad(d.getDate());
+      const hh = pad(d.getHours());
+      const mi = pad(d.getMinutes());
+      const ss = pad(d.getSeconds());
+      return `${yyyy}${mm}${dd}_${hh}${mi}${ss}`;
+    }
+
+    function exportExcel() {
+      const rows = getCurrentRowsByFilter();
+      if (!rows.length) {
+        Swal.fire({ icon: "info", title: "No data", text: "No rows available to export." });
+        return;
+      }
+
+      const data = rows.map((r) => ({
+        Item: r.item,
+        Lot: r.lot,
+        WMS: r.wms == null ? "" : r.wms,
+        D365: r.d365 == null ? "" : r.d365,
+        ACTUAL: r.actual == null ? "" : r.actual,
+        "Audit Status": r.status
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "FG Compare");
+      XLSX.writeFile(wb, `FG_Compare_${getExportTimestamp()}.xlsx`);
+    }
+
     document.getElementById("runBtn").addEventListener("click", runCompare);
+    document.getElementById("exportExcelBtn").addEventListener("click", exportExcel);
     document.getElementById("manualBtn").addEventListener("click", () => {
       Swal.fire({
         title: "ข้อมูลอ้างอิงสำหรับการคำนวณ FG Compare",
