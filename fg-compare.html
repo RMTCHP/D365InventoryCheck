@@ -1,0 +1,936 @@
+﻿<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FG File Compare</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #1e293b;
+      --secondary: #334155;
+      --bg: #eef2f7;
+      --text: #1b1b1d;
+      --muted: #64748b;
+      --border: #d6dbe5;
+      --surface: #ffffff;
+      --surface-low: #f8fafc;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    html, body { height: 100%; }
+    body { font-family: Inter, sans-serif; background: var(--bg); color: var(--text); overflow-y: auto; overflow-x: hidden; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; }
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+    .summary-card { transition: all .2s ease; }
+    .summary-card.active { transform: translateY(-1px); }
+    .summary-card.active p:first-child { font-weight: 700; }
+    .summary-card[data-filter="all"].active {
+      border-color: #0f172acc;
+      box-shadow: 0 0 0 3px #0f172a3a;
+      background: #e2e8f0;
+    }
+    .summary-card[data-filter="all"].active p:first-child { color: #0f172a !important; }
+    .summary-card[data-filter="match"].active {
+      border-color: #16653499;
+      box-shadow: 0 0 0 3px #16653422;
+      background: #f0fdf4;
+    }
+    .summary-card[data-filter="match"].active p:first-child { color: #166534 !important; }
+    .summary-card[data-filter="mismatch"].active {
+      border-color: #b91c1c99;
+      box-shadow: 0 0 0 3px #b91c1c22;
+      background: #fef2f2;
+    }
+    .summary-card[data-filter="mismatch"].active p:first-child { color: #b91c1c !important; }
+    .summary-card.active::after {
+      content: "ACTIVE";
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      color: #1e293b;
+      background: #e2e8f0;
+      border: 1px solid #cbd5e1;
+      border-radius: 999px;
+      padding: 2px 7px;
+    }
+    .summary-card[data-filter="all"].active::after {
+      color: #0f172a;
+      background: #cbd5e1;
+      border-color: #94a3b8;
+    }
+    .summary-card[data-filter="match"].active::after {
+      color: #166534;
+      background: #dcfce7;
+      border-color: #86efac;
+    }
+    .summary-card[data-filter="mismatch"].active::after {
+      color: #b91c1c;
+      background: #fee2e2;
+      border-color: #fca5a5;
+    }
+    .file-status {
+      font-size: 11px;
+      margin-top: 4px;
+      color: #64748b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .file-status.ok { color: #166534; font-weight: 600; }
+    .file-input.ok { border-color: var(--primary) !important; background: #eef2ff; color: #0f172a; }
+    .file-input-min {
+      border: 1px solid #cbd5e1 !important;
+      border-radius: 10px !important;
+      padding: 8px 10px !important;
+      background: #fff !important;
+      font-size: 13px !important;
+      color: #dc2626;
+    }
+    .file-input-min::file-selector-button {
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      color: #0f172a;
+      border-radius: 8px;
+      padding: 6px 10px;
+      margin-right: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .18s ease;
+    }
+    .file-input-min::file-selector-button:hover {
+      background: #eef2ff;
+      border-color: #94a3b8;
+    }
+    .btn-process { transition: transform .2s ease, box-shadow .2s ease, filter .2s ease; }
+    .btn-process:hover { transform: translateY(-2px); box-shadow: 0 10px 18px -8px rgba(30, 41, 59, 0.55); filter: brightness(1.05); }
+    .btn-process:active { transform: translateY(0); box-shadow: none; }
+    .btn-clear { transition: transform .2s ease, box-shadow .2s ease, background-color .2s ease, border-color .2s ease; }
+    .btn-clear:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 18px -10px rgba(185, 28, 28, 0.45);
+      background: #b91c1c;
+      border-color: #b91c1c;
+      color: #ffffff;
+    }
+    .btn-clear:active { transform: translateY(0); box-shadow: none; }
+    .card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .btn-expand {
+      width: 30px;
+      height: 30px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: #fff;
+      color: #334155;
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .2s ease;
+    }
+    .btn-expand:hover { background: #f8fafc; color: #0f172a; border-color: #94a3b8; }
+    .container { max-width: 1440px; min-height: 100vh; margin: 0 auto; padding: 1.5rem; display: flex; flex-direction: column; }
+    .header {
+      background: var(--primary);
+      border-radius: 20px;
+      padding: 1.1rem 1.5rem 1rem 1.5rem;
+      margin-bottom: 0.6rem;
+      color: #fff;
+      border: 1px solid transparent;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .header-row { display: flex; justify-content: space-between; align-items: center; }
+    .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+    .header-title { font-size: 2rem; display: flex; align-items: center; gap: 0.75rem; margin: 0; line-height: 1.1; font-weight: 700; letter-spacing: -.02em; }
+    .header-datetime { font-size: 1rem; font-weight: 500; opacity: 0.9; }
+    .header-description { font-size: 1.04rem; margin: 0; opacity: 0.92; font-weight: 400; }
+    .btn-manual {
+      background: rgba(255,255,255,.2);
+      border: 1px solid rgba(255,255,255,.45);
+      color: #fff;
+      border-radius: 10px;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s ease;
+    }
+    .btn-manual:hover { background: rgba(255,255,255,.32); transform: translateY(-1px); }
+    .main-flex { display: flex; gap: 1rem; align-items: flex-start; min-height: 0; flex: 1; }
+    .controls-section {
+      flex: 0 0 20%;
+      max-width: 21%;
+      min-width: 200px;
+      padding: 1rem;
+      box-sizing: border-box;
+      background: var(--surface);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      height: auto;
+      overflow: visible;
+    }
+    .tab-container {
+      width: 100%;
+      min-width: 0;
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      background: var(--surface);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      height: auto;
+      min-height: 0;
+      overflow: visible;
+    }
+    .right-panel {
+      flex: 1 1 0;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      overflow: visible;
+    }
+    #summaryCards { flex: 0 0 auto; }
+    #resultPanel { flex: 1 1 auto; height: auto; min-height: 0; display: flex; flex-direction: column; }
+    #tabTable, #tabChart { flex: 1 1 auto; min-height: 0; }
+    #tabTable { overflow: visible; max-height: none; }
+    #tabChart { overflow: visible; max-height: none; }
+    #tabTable {
+      padding-bottom: 2.75rem !important;
+      scroll-padding-bottom: 2.75rem;
+      box-sizing: border-box;
+    }
+    #tabTable table { margin-bottom: 1rem; }
+    #summaryCards .summary-card { border-radius: 16px; }
+    #summaryCards .summary-card p:first-child { letter-spacing: .08em; }
+    #tabTable table thead th { font-weight: 700; }
+    #tabTable table tbody tr { transition: background-color .15s ease; }
+    #tabTable table tbody tr:nth-child(even) { background: #fbfdff; }
+    #tabTable table tbody tr:hover { background: #eef4ff; }
+    .chart-canvas-wrap { position: relative; height: 240px; }
+    @media (max-width: 900px) {
+      .main-flex { flex-direction: column; height: auto; min-height: unset; }
+      .controls-section, .tab-container { max-width: 100%; width: 100%; height: auto; overflow-y: unset; }
+    }</style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="header-row">
+        <div>
+          <h1 class="header-title">FG File Compare</h1>
+          <p class="header-description">Validate data consistency across Actual, WMS, and D365.</p>
+        </div>
+        <div class="header-right">
+          <div id="currentTime" class="header-datetime"></div>
+          <button id="manualBtn" class="btn-manual">ข้อมูลอ้างอิง</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="main-flex">
+      <aside class="card controls-section">
+        <div class="text-base font-semibold mb-4">Upload Files</div>
+        <div class="space-y-3">
+          <label class="block">
+            <div class="text-sm font-semibold mb-1">Actual Tag</div>
+            <input id="fActual" type="file" accept=".xlsx,.xls" class="file-input-min block w-full text-sm border border-slate-300 rounded-lg p-3 bg-white" />
+            <p id="fActualName" class="file-status break-all">No file selected</p>
+          </label>
+          <label class="block">
+            <div class="text-sm font-semibold mb-1">WMS Report</div>
+            <input id="fWms" type="file" accept=".xlsx,.xls" class="file-input-min block w-full text-sm border border-slate-300 rounded-lg p-3 bg-white" />
+            <p id="fWmsName" class="file-status break-all">No file selected</p>
+          </label>
+          <label class="block">
+            <div class="text-sm font-semibold mb-1">D365 On-hand</div>
+            <input id="fD365" type="file" accept=".xlsx,.xls" class="file-input-min block w-full text-sm border border-slate-300 rounded-lg p-3 bg-white" />
+            <p id="fD365Name" class="file-status break-all">No file selected</p>
+          </label>
+        </div>
+        <button id="runBtn" class="btn-process mt-4 w-full bg-[var(--primary)] text-white text-base font-semibold py-3 rounded-lg">
+          Process Compare
+        </button>
+        <button id="clearBtn" class="btn-clear mt-3 w-full bg-red-600 border border-red-700 text-white text-base font-semibold py-3 rounded-lg">
+          Clear
+        </button>
+      </aside>
+
+      <div class="right-panel">
+        <div id="summaryCards" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <button data-filter="all" class="summary-card card p-4 text-left">
+            <p class="text-[11px] uppercase tracking-wider text-slate-500 mb-1">Total Keys</p>
+            <p id="totalKeys" class="text-2xl font-bold text-[var(--primary)]">0</p>
+          </button>
+          <button data-filter="match" class="summary-card card p-4 text-left">
+            <p class="text-[11px] uppercase tracking-wider text-slate-500 mb-1">Matched</p>
+            <p id="matchKeys" class="text-2xl font-bold text-[var(--secondary)]">0</p>
+          </button>
+          <button data-filter="mismatch" class="summary-card card p-4 text-left">
+            <p class="text-[11px] uppercase tracking-wider text-slate-500 mb-1">Mismatched</p>
+            <p id="mismatchKeys" class="text-2xl font-bold text-red-700">0</p>
+          </button>
+        </div>
+
+        <section class="tab-container min-h-0">
+        <div id="resultPanel" class="overflow-hidden">
+          <div class="flex border-b border-slate-200 bg-[var(--surface-low)] px-3">
+            <button id="tabTableBtn" class="px-8 py-4 text-base font-semibold border-b-2 border-[var(--primary)] text-[var(--primary)]">Data Table</button>
+            <button id="tabChartBtn" class="px-8 py-4 text-base font-semibold text-slate-500">Analytics & Insights</button>
+          </div>
+
+          <div id="tabTable" class="p-8">
+            <div class="overflow-x-auto custom-scroll">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-200 text-sm text-slate-600">
+                    <th class="py-4 px-4">ITEM</th>
+                    <th class="py-4 px-4">LOT</th>
+                    <th class="py-4 px-4">WMS</th>
+                    <th class="py-4 px-4">D365</th>
+                    <th class="py-4 px-4">ACTUAL</th>
+                    <th class="py-4 px-4 text-right">AUDIT STATUS</th>
+                  </tr>
+                </thead>
+                <tbody id="rows" class="text-sm"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="tabChart" class="p-8 hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div class="card p-4">
+                <h4 class="text-base font-semibold mb-3">Match vs Mismatch Ratio</h4>
+                <div class="chart-canvas-wrap">
+                  <canvas id="resultPie"></canvas>
+                </div>
+              </div>
+              <div class="card p-4">
+                <div class="card-head mb-3">
+                  <h4 class="text-base font-semibold">Source Comparison (Qty, Gap, % Complete)</h4>
+                  <button id="expandSourceBtn" class="btn-expand" title="Expand chart" aria-label="Expand chart">⤢</button>
+                </div>
+                <div class="chart-canvas-wrap">
+                  <canvas id="sourceBar"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        </section>
+      </div>
+    </div>
+  </div>
+  <script>
+    let allResultRows = [];
+    let currentFilter = "all";
+    let resultPieChart = null;
+    let sourceBarChart = null;
+
+    function normalizeText(v) { return String(v == null ? "" : v).trim(); }
+    function normalizedLower(v) { return normalizeText(v).toLowerCase(); }
+    function toNumber(v) {
+      if (v == null || v === "") return 0;
+      if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+      const n = Number(String(v).replace(/,/g, "").trim());
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function readWorkbook(file) {
+      return new Promise((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => {
+          try { resolve(XLSX.read(fr.result, { type: "array" })); }
+          catch (e) { reject(e); }
+        };
+        fr.onerror = reject;
+        fr.readAsArrayBuffer(file);
+      });
+    }
+    function sheetToRows(wb, sheetIndex = 0) {
+      const ws = wb.Sheets[wb.SheetNames[sheetIndex]];
+      return XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: "" });
+    }
+
+    function findHeaderRow(rows, predicates) {
+      for (let r = 0; r < rows.length; r++) {
+        const row = rows[r].map(normalizedLower);
+        if (predicates.every((fn) => fn(row))) return r;
+      }
+      return -1;
+    }
+    function hasAnyToken(row, tokens) {
+      return row.some((cell) => tokens.some((t) => cell.includes(t)));
+    }
+    function indexMap(headerRow) {
+      const map = {};
+      headerRow.forEach((h, i) => { map[normalizedLower(h)] = i; });
+      return map;
+    }
+    function findIndexByAnyToken(idx, tokenGroups) {
+      const keys = Object.keys(idx);
+      for (const key of keys) {
+        const low = key.toLowerCase();
+        for (const group of tokenGroups) {
+          if (group.every((tok) => low.includes(tok))) return idx[key];
+        }
+      }
+      return null;
+    }
+
+    function showProgress(title, text, percent) {
+      Swal.fire({
+        title,
+        html: `
+          <div style="margin-top:8px">${text}</div>
+          <div style="height:10px;background:#e2e8f0;border-radius:999px;margin-top:12px;overflow:hidden;">
+            <div style="width:${percent}%;height:100%;background:#1b6b51;transition:width .2s"></div>
+          </div>
+          <div style="margin-top:6px;font-size:12px;color:#64748b;">${percent}%</div>
+        `,
+        allowOutsideClick: false,
+        showConfirmButton: false
+      });
+    }
+
+    function parseActual(rows) {
+      const hr = findHeaderRow(rows, [
+        (row) => hasAnyToken(row, ["barcode"]),
+        (row) => hasAnyToken(row, ["quantity", "จำนวน"])
+      ]);
+      if (hr < 0) return new Map();
+
+      const idx = indexMap(rows[hr]);
+      const iBarcode = findIndexByAnyToken(idx, [["barcode"]]);
+      const iQty = findIndexByAnyToken(idx, [["quantity"], ["จำนวน"]]);
+      const out = new Map();
+      if (iBarcode == null || iQty == null) return out;
+
+      for (let r = hr + 1; r < rows.length; r++) {
+        const row = rows[r];
+        const barcode = normalizeText(row[iBarcode]);
+        if (!barcode) continue;
+        const qty = toNumber(row[iQty]);
+        const parts = barcode.split("/").map((x) => x.trim()).filter(Boolean);
+        const item = normalizeText(parts[0]);
+        const lot = normalizeText(parts[2]);
+        if (!item || !lot) continue;
+        const key = `${item}||${lot}`;
+        out.set(key, (out.get(key) || 0) + qty);
+      }
+      return out;
+    }
+
+    function parseWms(rows) {
+      const hr = findHeaderRow(rows, [
+        (row) => hasAnyToken(row, ["จำนวน", "qty", "quantity"]),
+        (row) => hasAnyToken(row, ["lot", "ล็อต", "ล๊อต"])
+      ]);
+      if (hr < 0) return new Map();
+
+      const idx = indexMap(rows[hr]);
+      const iItem = findIndexByAnyToken(idx, [["d365", "code"], ["รหัส", "d365"]]);
+      const iLot = findIndexByAnyToken(idx, [["lot"], ["ล็อต"], ["ล๊อต"], ["หมายเลข", "ล็อต"], ["หมายเลข", "ล๊อต"]]);
+      const iQty = findIndexByAnyToken(idx, [["quantity"], ["qty"], ["จำนวน"]]);
+      const out = new Map();
+      let lastItem = "";
+      if (iLot == null || iQty == null) return out;
+
+      for (let r = hr + 1; r < rows.length; r++) {
+        const row = rows[r];
+        const itemRaw = iItem != null ? normalizeText(row[iItem]) : "";
+        const item = itemRaw || lastItem;
+        const lot = normalizeText(row[iLot]);
+        const qty = toNumber(row[iQty]);
+        if (itemRaw) lastItem = itemRaw;
+        if (!item || !lot) continue;
+        const key = `${item}||${lot}`;
+        out.set(key, (out.get(key) || 0) + qty);
+      }
+      return out;
+    }
+
+    function parseD365(rows) {
+      const hr = findHeaderRow(rows, [
+        (row) => hasAnyToken(row, ["item number"]),
+        (row) => hasAnyToken(row, ["batch number"]),
+        (row) => hasAnyToken(row, ["total available"])
+      ]);
+      if (hr < 0) return new Map();
+
+      const idx = indexMap(rows[hr]);
+      const iItem = findIndexByAnyToken(idx, [["item number"]]);
+      const iWh = findIndexByAnyToken(idx, [["warehouse"]]);
+      const iLot = findIndexByAnyToken(idx, [["batch number"]]);
+      const iQty = findIndexByAnyToken(idx, [["total available"]]);
+      const out = new Map();
+      if (iItem == null || iWh == null || iLot == null || iQty == null) return out;
+
+      for (let r = hr + 1; r < rows.length; r++) {
+        const row = rows[r];
+        const item = normalizeText(row[iItem]);
+        const warehouse = normalizeText(row[iWh]).toUpperCase();
+        const lot = normalizeText(row[iLot]);
+        const qty = toNumber(row[iQty]);
+        const allowWh = warehouse === "G1-FGPM" || warehouse === "G1-SPARE";
+        if (!item || !lot || !allowWh) continue;
+        const key = `${item}||${lot}`;
+        out.set(key, (out.get(key) || 0) + qty);
+      }
+      return out;
+    }
+
+    function renderSummary(meta) {
+      document.getElementById("totalKeys").textContent = meta.totalKeys.toLocaleString();
+      document.getElementById("matchKeys").textContent = meta.match.toLocaleString();
+      document.getElementById("mismatchKeys").textContent = meta.mismatch.toLocaleString();
+      document.querySelectorAll(".summary-card").forEach((el) => el.classList.toggle("active", el.dataset.filter === currentFilter));
+    }
+
+    function renderRows(rows) {
+      const tb = document.getElementById("rows");
+      if (!rows.length) {
+        tb.innerHTML = `<tr><td colspan="6" class="py-6 px-4 text-slate-500">No data found.</td></tr>`;
+        return;
+      }
+      tb.innerHTML = rows.map((x) => `
+        <tr class="border-b border-slate-200 hover:bg-slate-50">
+          <td class="py-4 px-4 font-medium">${x.item}</td>
+          <td class="py-4 px-4 text-slate-600">${x.lot}</td>
+          <td class="py-4 px-4">${x.wms == null ? "-" : x.wms.toLocaleString()}</td>
+          <td class="py-4 px-4">${x.d365 == null ? "-" : x.d365.toLocaleString()}</td>
+          <td class="py-4 px-4">${x.actual == null ? "-" : x.actual.toLocaleString()}</td>
+          <td class="py-4 px-4 text-right">
+            ${x.status === "MATCH"
+              ? `<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-[11px] font-semibold">MATCH</span>`
+              : `<span class="bg-red-700 text-white px-2 py-1 rounded text-[11px] font-semibold">MISMATCH</span>`}
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function renderByFilter() {
+      let rows = allResultRows;
+      if (currentFilter === "match") rows = rows.filter((x) => x.status === "MATCH");
+      if (currentFilter === "mismatch") rows = rows.filter((x) => x.status === "MISMATCH");
+      renderRows(rows);
+      renderCharts(rows);
+    }
+
+    function renderCharts(rows) {
+      const match = rows.filter((x) => x.status === "MATCH").length;
+      const mismatch = rows.length - match;
+      const sumActual = rows.reduce((s, x) => s + x.actual, 0);
+      const sumWms = rows.reduce((s, x) => s + x.wms, 0);
+      const sumD365 = rows.reduce((s, x) => s + x.d365, 0);
+
+      if (resultPieChart) resultPieChart.destroy();
+      if (sourceBarChart) sourceBarChart.destroy();
+
+      resultPieChart = new Chart(document.getElementById("resultPie"), {
+        type: "doughnut",
+        data: {
+          labels: ["Match", "Mismatch"],
+          datasets: [{ data: [match, mismatch], backgroundColor: ["#1b6b51", "#ba1a1a"], borderWidth: 0 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom" } }, cutout: "65%" }
+      });
+
+      sourceBarChart = new Chart(document.getElementById("sourceBar"), {
+        type: "bar",
+        data: {
+          labels: ["Actual", "WMS", "D365"],
+          datasets: [
+            {
+              type: "bar",
+              label: "Actual",
+              data: [sumActual, sumWms, sumD365],
+              backgroundColor: ["#1e293b", "#1b6b51", "#6366f1"],
+              borderRadius: 8,
+              yAxisID: "y",
+              categoryPercentage: 0.62,
+              barPercentage: 0.78
+            },
+            {
+              type: "line",
+              label: "WMS",
+              data: [],
+              borderColor: "#1b6b51",
+              backgroundColor: "#1b6b51",
+              pointStyle: "circle",
+              showLine: false
+            },
+            {
+              type: "line",
+              label: "D365",
+              data: [],
+              borderColor: "#6366f1",
+              backgroundColor: "#6366f1",
+              pointStyle: "circle",
+              showLine: false
+            },
+            {
+              type: "bar",
+              label: "Gap",
+              data: [0, Math.abs(sumActual - sumWms), Math.abs(sumActual - sumD365)],
+              backgroundColor: "#ef4444",
+              borderRadius: 8,
+              yAxisID: "y",
+              categoryPercentage: 0.62,
+              barPercentage: 0.78
+            },
+            {
+              type: "line",
+              label: "% Complete",
+              data: [
+                100,
+                sumActual > 0 ? (sumWms / sumActual) * 100 : 0,
+                sumActual > 0 ? (sumD365 / sumActual) * 100 : 0
+              ],
+              borderColor: "#d97706",
+              backgroundColor: "#d97706",
+              pointBackgroundColor: "#d97706",
+              pointRadius: 4,
+              pointHoverRadius: 5,
+              tension: 0.35,
+              yAxisID: "yPercent"
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: true, position: "top", labels: { usePointStyle: true } }
+          },
+          scales: {
+            y: { beginAtZero: true, title: { display: true, text: "Quantity" } },
+            yPercent: {
+              position: "right",
+              min: 0,
+              max: 100,
+              grid: { drawOnChartArea: false },
+              title: { display: true, text: "% Complete" }
+            }
+          }
+        }
+      });
+    }
+
+    function setFileStatus(inputId, labelId) {
+      const input = document.getElementById(inputId);
+      const label = document.getElementById(labelId);
+      if (input.files[0]) {
+        label.textContent = `Uploaded: ${input.files[0].name}`;
+        label.classList.add("ok");
+        input.classList.add("ok", "file-input");
+      } else {
+        label.textContent = "No file selected";
+        label.classList.remove("ok");
+        input.classList.remove("ok", "file-input");
+      }
+    }
+
+    async function runCompare() {
+      const fActual = document.getElementById("fActual").files[0];
+      const fWms = document.getElementById("fWms").files[0];
+      const fD365 = document.getElementById("fD365").files[0];
+      const selectedCount = [fActual, fWms, fD365].filter(Boolean).length;
+      if (selectedCount < 2) {
+        await Swal.fire({
+          icon: "warning",
+          title: "Need at least 2 files",
+          text: "Please upload at least 2 files to compare.",
+          confirmButtonColor: "#1e293b"
+        });
+        return;
+      }
+
+      try {
+        const labels = [];
+        if (fActual) labels.push("Actual");
+        if (fWms) labels.push("WMS");
+        if (fD365) labels.push("D365");
+        showProgress("Uploading files", `Reading ${labels.join(" / ")} files...`, 20);
+        const wbA = fActual ? await readWorkbook(fActual) : null;
+        const wbW = fWms ? await readWorkbook(fWms) : null;
+        const wbD = fD365 ? await readWorkbook(fD365) : null;
+
+        showProgress("Processing", "Parsing workbook data...", 55);
+        const mapA = wbA ? parseActual(sheetToRows(wbA)) : new Map();
+        const mapW = wbW ? parseWms(sheetToRows(wbW)) : new Map();
+        const mapD = wbD ? parseD365(sheetToRows(wbD)) : new Map();
+        const keys = new Set([...mapA.keys(), ...mapW.keys(), ...mapD.keys()]);
+
+        showProgress("Processing", "Comparing keys and building result table...", 80);
+        const rows = [];
+        let match = 0;
+        let mismatch = 0;
+        for (const key of keys) {
+          const [item, lot] = key.split("||");
+          const actual = fActual ? (mapA.has(key) ? mapA.get(key) : 0) : null;
+          const wms = fWms ? (mapW.has(key) ? mapW.get(key) : 0) : null;
+          const d365 = fD365 ? (mapD.has(key) ? mapD.get(key) : 0) : null;
+          const used = [actual, wms, d365].filter((v) => v != null);
+          const status = used.every((v) => v === used[0]) ? "MATCH" : "MISMATCH";
+          if (status === "MATCH") match++; else mismatch++;
+          rows.push({ item, lot, actual, wms, d365, status });
+        }
+        rows.sort((a, b) => (a.status !== b.status ? (a.status === "MISMATCH" ? -1 : 1) : `${a.item}${a.lot}`.localeCompare(`${b.item}${b.lot}`)));
+
+        allResultRows = rows;
+        renderSummary({ totalKeys: keys.size, match, mismatch });
+        renderByFilter();
+
+        showProgress("Finishing", "Rendering table and charts...", 100);
+        await new Promise((res) => setTimeout(res, 250));
+        Swal.close();
+        await Swal.fire({
+          icon: "success",
+          title: "Process completed",
+          html: `Match: <b>${match.toLocaleString()}</b><br>Mismatch: <b>${mismatch.toLocaleString()}</b>`,
+          confirmButtonColor: "#1b6b51"
+        });
+      } catch (err) {
+        console.error(err);
+        Swal.close();
+        await Swal.fire({
+          icon: "error",
+          title: "Process failed",
+          text: "An error occurred: " + (err.message || err),
+          confirmButtonColor: "#ba1a1a"
+        });
+      }
+    }
+
+    function clearAll() {
+      ["fActual", "fWms", "fD365"].forEach((id) => { document.getElementById(id).value = ""; });
+      setFileStatus("fActual", "fActualName");
+      setFileStatus("fWms", "fWmsName");
+      setFileStatus("fD365", "fD365Name");
+      allResultRows = [];
+      currentFilter = "all";
+      renderSummary({ totalKeys: 0, match: 0, mismatch: 0 });
+      renderRows([]);
+      if (resultPieChart) { resultPieChart.destroy(); resultPieChart = null; }
+      if (sourceBarChart) { sourceBarChart.destroy(); sourceBarChart = null; }
+    }
+
+    function initFileLabels() {
+      [["fActual","fActualName"],["fWms","fWmsName"],["fD365","fD365Name"]].forEach(([i, l]) => {
+        const input = document.getElementById(i);
+        input.addEventListener("change", async () => {
+          if (input.files[0]) {
+            Swal.fire({
+              title: "Uploading file...",
+              text: "Please wait",
+              allowOutsideClick: false,
+              showConfirmButton: false,
+              didOpen: () => Swal.showLoading()
+            });
+            await new Promise((res) => setTimeout(res, 450));
+          }
+          setFileStatus(i, l);
+          if (input.files[0]) {
+            Swal.close();
+            await Swal.fire({
+              icon: "info",
+              title: "File uploaded",
+              text: `${input.files[0].name} is ready.`,
+              timer: 900,
+              showConfirmButton: false
+            });
+          }
+        });
+      });
+    }
+
+    function initTabs() {
+      const tableBtn = document.getElementById("tabTableBtn");
+      const chartBtn = document.getElementById("tabChartBtn");
+      const tableTab = document.getElementById("tabTable");
+      const chartTab = document.getElementById("tabChart");
+      tableBtn.addEventListener("click", () => {
+        tableBtn.className = "px-8 py-4 text-base font-semibold border-b-2 border-[var(--primary)] text-[var(--primary)]";
+        chartBtn.className = "px-8 py-4 text-base font-semibold text-slate-500";
+        tableTab.classList.remove("hidden");
+        chartTab.classList.add("hidden");
+      });
+      chartBtn.addEventListener("click", () => {
+        chartBtn.className = "px-8 py-4 text-base font-semibold border-b-2 border-[var(--primary)] text-[var(--primary)]";
+        tableBtn.className = "px-8 py-4 text-base font-semibold text-slate-500";
+        chartTab.classList.remove("hidden");
+        tableTab.classList.add("hidden");
+      });
+    }
+
+    function initSummaryFilter() {
+      document.querySelectorAll(".summary-card").forEach((el) => {
+        el.addEventListener("click", () => {
+          currentFilter = el.dataset.filter || "all";
+          const m = allResultRows.filter((x) => x.status === "MATCH").length;
+          const mm = allResultRows.filter((x) => x.status === "MISMATCH").length;
+          renderSummary({ totalKeys: allResultRows.length, match: m, mismatch: mm });
+          renderByFilter();
+        });
+      });
+    }
+
+    function initTime() {
+      const el = document.getElementById("currentTime");
+      const tick = () => {
+        el.textContent = new Date().toLocaleString("en-GB", {
+          year: "numeric", month: "short", day: "numeric",
+          hour: "2-digit", minute: "2-digit", second: "2-digit"
+        });
+      };
+      tick();
+      setInterval(tick, 1000);
+    }
+
+    document.getElementById("runBtn").addEventListener("click", runCompare);
+    document.getElementById("manualBtn").addEventListener("click", () => {
+      Swal.fire({
+        title: "ข้อมูลอ้างอิงสำหรับการคำนวณ FG Compare",
+        width: 980,
+        confirmButtonColor: "#1e293b",
+        html: `
+          <div style="text-align:left;">
+            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;">
+              <section style="background:#f8fafc;border:1px solid #dbe3ef;border-radius:12px;padding:12px 14px;">
+                <div style="font-weight:700;color:#0f172a;margin-bottom:8px;">Actual Tag</div>
+                <ol style="margin:0;padding-left:18px;line-height:1.65;color:#334155;font-size:13px;">
+                  <li>ค้นหาแถวหัวตารางที่มีคอลัมน์ <b>Barcode</b> และ <b>Quantity/จำนวน</b></li>
+                  <li>นำค่า <b>Barcode</b> มาแยกด้วย <b>/</b></li>
+                  <li><b>Item</b> = ส่วนที่ 1 และ <b>Lot</b> = ส่วนที่ 3</li>
+                  <li>รวมจำนวนด้วยคีย์ <b>Item||Lot</b></li>
+                </ol>
+              </section>
+
+              <section style="background:#f8fafc;border:1px solid #dbe3ef;border-radius:12px;padding:12px 14px;">
+                <div style="font-weight:700;color:#0f172a;margin-bottom:8px;">WMS Report</div>
+                <ol style="margin:0;padding-left:18px;line-height:1.65;color:#334155;font-size:13px;">
+                  <li>ค้นหาแถวหัวตารางที่มีคอลัมน์ <b>Lot</b> และ <b>Quantity/จำนวน</b></li>
+                  <li>ใช้ <b>D365 Code/รหัส D365</b> เป็น Item (กรณีแถวว่างจะใช้ค่าจากแถวก่อนหน้า)</li>
+                  <li>ใช้ <b>Lot</b> + <b>Quantity</b> แล้วรวมจำนวนด้วยคีย์ <b>Item||Lot</b></li>
+                </ol>
+              </section>
+
+              <section style="background:#f8fafc;border:1px solid #dbe3ef;border-radius:12px;padding:12px 14px;">
+                <div style="font-weight:700;color:#0f172a;margin-bottom:8px;">D365 On-hand</div>
+                <ol style="margin:0;padding-left:18px;line-height:1.65;color:#334155;font-size:13px;">
+                  <li>ใช้คอลัมน์ <b>Item number</b>, <b>Batch number</b>, <b>Total available</b>, <b>Warehouse</b></li>
+                  <li>ใช้เฉพาะ Warehouse = <b>G1-FGPM</b> และ <b>G1-SPARE</b></li>
+                  <li>รวมจำนวนด้วยคีย์ <b>Item||Lot</b></li>
+                </ol>
+              </section>
+            </div>
+            <div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:#eef2ff;border:1px solid #c7d2fe;color:#1e293b;font-size:12px;">
+              คีย์ที่ใช้เปรียบเทียบผลลัพธ์คือ <b>Item + Lot</b> และเปรียบเทียบจำนวนจาก Actual / WMS / D365
+            </div>
+          </div>
+        `,
+        confirmButtonText: "ปิด"
+      });
+    });
+    document.getElementById("clearBtn").addEventListener("click", async () => {
+      const result = await Swal.fire({
+        icon: "warning",
+        title: "Clear all data?",
+        text: "Do you really want to clear uploaded files and results?",
+        showCancelButton: true,
+        confirmButtonText: "Yes, clear",
+        cancelButtonText: "Cancel",
+        confirmButtonColor: "#b91c1c",
+        cancelButtonColor: "#64748b"
+      });
+      if (result.isConfirmed) {
+        clearAll();
+        await Swal.fire({
+          icon: "success",
+          title: "Cleared",
+          text: "All uploaded files and results have been cleared.",
+          timer: 1000,
+          showConfirmButton: false
+        });
+      }
+    });
+    document.getElementById("expandSourceBtn").addEventListener("click", () => {
+      if (!sourceBarChart) {
+        Swal.fire({
+          icon: "info",
+          title: "No chart data",
+          text: "Please run Process Compare first."
+        });
+        return;
+      }
+
+      Swal.fire({
+        title: "Source Comparison (Qty, Gap, % Complete)",
+        width: 1180,
+        padding: "1rem 1.25rem 1.25rem 1.25rem",
+        html: '<div style="height:min(62vh,560px);"><canvas id="sourceBarExpanded"></canvas></div>',
+        showCloseButton: true,
+        showConfirmButton: false,
+        didOpen: () => {
+          const ctx = document.getElementById("sourceBarExpanded");
+          const data = sourceBarChart.data;
+          const options = JSON.parse(JSON.stringify(sourceBarChart.options));
+          options.maintainAspectRatio = false;
+          options.layout = { padding: { top: 6, right: 10, bottom: 0, left: 6 } };
+          options.plugins = options.plugins || {};
+          options.plugins.legend = options.plugins.legend || {};
+          options.plugins.legend.position = "top";
+          options.plugins.legend.labels = {
+            usePointStyle: true,
+            boxWidth: 10,
+            boxHeight: 10,
+            padding: 14,
+            font: { size: 13, weight: "600" }
+          };
+          options.scales = options.scales || {};
+          options.scales.x = options.scales.x || {};
+          options.scales.y = options.scales.y || {};
+          options.scales.yPercent = options.scales.yPercent || {};
+          options.scales.x.ticks = { ...(options.scales.x.ticks || {}), font: { size: 12, weight: "600" } };
+          options.scales.y.ticks = { ...(options.scales.y.ticks || {}), font: { size: 11 } };
+          options.scales.yPercent.ticks = { ...(options.scales.yPercent.ticks || {}), font: { size: 11 } };
+          new Chart(ctx, {
+            type: "bar",
+            data: JSON.parse(JSON.stringify(data)),
+            options
+          });
+        }
+      });
+    });
+
+    initFileLabels();
+    initTabs();
+    initSummaryFilter();
+    initTime();
+    clearAll();
+  </script>
+</body>
+</html>
+
+
+
