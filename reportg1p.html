@@ -356,6 +356,10 @@
               <i class="fas fa-file-excel"></i>
               ดาวน์โหลด Excel
             </button>
+            <button class="btn btn-secondary" onclick="App.openFgCompare()">
+              <i class="fas fa-code-compare"></i>
+              FG Compare
+            </button>
           </div>
         </aside>
 
@@ -791,8 +795,12 @@
         }
       }
 
+      function openFgCompare() {
+        window.open('fg-compare.html', '_blank', 'noopener,noreferrer');
+      }
+
       return {
-        switchMainPage, switchTab, clearFilters, loadData, exportExcel,
+        switchMainPage, switchTab, clearFilters, loadData, exportExcel, openFgCompare,
         displayTablePage, setupPagination, updateSummary, updateDatetime,
         adjustTimeByHours, extractBarcodeBeforeSlash
       };
