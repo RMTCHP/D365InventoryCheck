@@ -234,15 +234,37 @@
       box-sizing: border-box;
     }
     #tabTable table { margin-bottom: 1rem; }
-    #summaryCards .summary-card { border-radius: 16px; }
-    #summaryCards .summary-card p:first-child { letter-spacing: .08em; }
+    #summaryCards { gap: 0.85rem; }
+    #summaryCards .summary-card {
+      border-radius: 14px;
+      padding: 0.72rem 0.85rem;
+      border: 1px solid #d7deea;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      box-shadow: 0 6px 14px -12px rgba(15, 23, 42, 0.45);
+      position: relative;
+      overflow: hidden;
+    }
+    #summaryCards .summary-card::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 3px;
+      background: #cbd5e1;
+    }
+    #summaryCards .summary-card p:first-child { letter-spacing: .08em; font-size: 10px; margin-bottom: 4px; }
+    #summaryCards .summary-card p:last-child { font-size: 1.45rem; line-height: 1; }
+    #summaryCards .summary-card[data-filter="all"]::before { background: #1e293b; }
+    #summaryCards .summary-card[data-filter="match"]::before { background: #166534; }
+    #summaryCards .summary-card[data-filter="mismatch"]::before { background: #b91c1c; }
     #tabTable table thead th { font-weight: 700; }
     #tabTable table tbody tr { transition: background-color .15s ease; }
     #tabTable table tbody tr:nth-child(even) { background: #fbfdff; }
     #tabTable table tbody tr:hover { background: #eef4ff; }
     #tabTable::-webkit-scrollbar { width: 10px; }
     #tabTable::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 999px; }
-    .chart-canvas-wrap { position: relative; height: 240px; }
+    .chart-canvas-wrap { position: relative; height: 190px; }
     @media (max-width: 900px) {
       .container { height: auto; min-height: 100vh; grid-template-rows: auto auto; }
       .main-flex { grid-template-columns: 1fr; height: auto; min-height: unset; overflow: visible; }
@@ -307,6 +329,18 @@
             <p class="text-[11px] uppercase tracking-wider text-slate-500 mb-1">Mismatched</p>
             <p id="mismatchKeys" class="text-2xl font-bold text-red-700">0</p>
           </button>
+          <div class="summary-card card p-4 text-left">
+            <p class="text-[11px] uppercase tracking-wider text-slate-500 mb-1">WMS Qty</p>
+            <p id="wmsTotal" class="text-2xl font-bold text-[var(--secondary)]">0</p>
+          </div>
+          <div class="summary-card card p-4 text-left">
+            <p class="text-[11px] uppercase tracking-wider text-slate-500 mb-1">D365 Qty</p>
+            <p id="d365Total" class="text-2xl font-bold text-indigo-600">0</p>
+          </div>
+          <div class="summary-card card p-4 text-left">
+            <p class="text-[11px] uppercase tracking-wider text-slate-500 mb-1">ACTUAL Qty</p>
+            <p id="actualTotal" class="text-2xl font-bold text-[var(--primary)]">0</p>
+          </div>
         </div>
 
         <section class="tab-container min-h-0">
@@ -524,7 +558,19 @@
       document.getElementById("totalKeys").textContent = meta.totalKeys.toLocaleString();
       document.getElementById("matchKeys").textContent = meta.match.toLocaleString();
       document.getElementById("mismatchKeys").textContent = meta.mismatch.toLocaleString();
+      document.getElementById("wmsTotal").textContent = (meta.wmsTotal || 0).toLocaleString();
+      document.getElementById("d365Total").textContent = (meta.d365Total || 0).toLocaleString();
+      document.getElementById("actualTotal").textContent = (meta.actualTotal || 0).toLocaleString();
       document.querySelectorAll(".summary-card").forEach((el) => el.classList.toggle("active", el.dataset.filter === currentFilter));
+    }
+
+    function calcSourceTotals(rows) {
+      return rows.reduce((acc, x) => {
+        acc.wmsTotal += x.wms ?? 0;
+        acc.d365Total += x.d365 ?? 0;
+        acc.actualTotal += x.actual ?? 0;
+        return acc;
+      }, { wmsTotal: 0, d365Total: 0, actualTotal: 0 });
     }
 
     function renderRows(rows) {
@@ -553,6 +599,15 @@
       let rows = allResultRows;
       if (currentFilter === "match") rows = rows.filter((x) => x.status === "MATCH");
       if (currentFilter === "mismatch") rows = rows.filter((x) => x.status === "MISMATCH");
+      const totals = calcSourceTotals(rows);
+      const match = rows.filter((x) => x.status === "MATCH").length;
+      const mismatch = rows.filter((x) => x.status === "MISMATCH").length;
+      renderSummary({
+        totalKeys: rows.length,
+        match,
+        mismatch,
+        ...totals
+      });
       renderRows(rows);
       renderCharts(rows);
     }
@@ -749,7 +804,6 @@
         rows.sort((a, b) => (a.status !== b.status ? (a.status === "MISMATCH" ? -1 : 1) : `${a.item}${a.lot}`.localeCompare(`${b.item}${b.lot}`)));
 
         allResultRows = rows;
-        renderSummary({ totalKeys: keys.size, match, mismatch });
         renderByFilter();
 
         showProgress("Finishing", "Rendering table and charts...", 100);
@@ -780,7 +834,7 @@
       setFileStatus("fD365", "fD365Name");
       allResultRows = [];
       currentFilter = "all";
-      renderSummary({ totalKeys: 0, match: 0, mismatch: 0 });
+      renderSummary({ totalKeys: 0, match: 0, mismatch: 0, wmsTotal: 0, d365Total: 0, actualTotal: 0 });
       renderRows([]);
       if (resultPieChart) { resultPieChart.destroy(); resultPieChart = null; }
       if (sourceBarChart) { sourceBarChart.destroy(); sourceBarChart = null; }
@@ -840,7 +894,6 @@
           currentFilter = el.dataset.filter || "all";
           const m = allResultRows.filter((x) => x.status === "MATCH").length;
           const mm = allResultRows.filter((x) => x.status === "MISMATCH").length;
-          renderSummary({ totalKeys: allResultRows.length, match: m, mismatch: mm });
           renderByFilter();
         });
       });
@@ -906,6 +959,8 @@
         title: "ข้อมูลอ้างอิงสำหรับการคำนวณ FG Compare",
         width: 980,
         confirmButtonColor: "#1e293b",
+        showConfirmButton: false,
+        showCloseButton: true,
         html: `
           <div style="text-align:left;">
             <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;">
@@ -941,8 +996,7 @@
               คีย์ที่ใช้เปรียบเทียบผลลัพธ์คือ <b>Item + Lot</b> และเปรียบเทียบจำนวนจาก Actual / WMS / D365
             </div>
           </div>
-        `,
-        confirmButtonText: "ปิด"
+        `
       });
     });
     document.getElementById("clearBtn").addEventListener("click", async () => {
