@@ -374,7 +374,9 @@
           <div id="tabChart" class="p-8 hidden">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div class="card p-4">
-                <h4 class="text-base font-semibold mb-3">Match vs Mismatch Ratio</h4>
+                <div class="card-head mb-3">
+                  <h4 class="text-base font-semibold">Match vs Mismatch Ratio</h4>
+                </div>
                 <div class="chart-canvas-wrap">
                   <canvas id="resultPie"></canvas>
                 </div>
@@ -400,6 +402,151 @@
     let currentFilter = "all";
     let resultPieChart = null;
     let sourceBarChart = null;
+    const piePercentLabelPlugin = {
+      id: "piePercentLabelPlugin",
+      afterDatasetsDraw(chart, args, pluginOptions) {
+        if (!chart?.data?.datasets?.[0]) return;
+        const dataset = chart.data.datasets[0];
+        const data = dataset.data || [];
+        const total = data.reduce((s, v) => s + (Number(v) || 0), 0);
+        if (!total) return;
+
+        const ctx = chart.ctx;
+        const labels = chart.data.labels || [];
+        const meta = chart.getDatasetMeta(0);
+
+        ctx.save();
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.font = "700 12px Inter, sans-serif";
+
+        meta.data.forEach((arc, i) => {
+          const value = Number(data[i]) || 0;
+          if (!value) return;
+          const pct = `${((value / total) * 100).toFixed(1)}%`;
+          const p = arc.tooltipPosition();
+
+          const textW = ctx.measureText(pct).width;
+          const padX = 6;
+          const padY = 4;
+          const boxW = textW + padX * 2;
+          const boxH = 20;
+          const x = p.x - boxW / 2;
+          const y = p.y - boxH / 2;
+          const color = labels[i] === "Match" ? "#166534" : "#b91c1c";
+
+          ctx.fillStyle = "rgba(255,255,255,0.92)";
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 1.2;
+          const r = 6;
+          ctx.beginPath();
+          ctx.moveTo(x + r, y);
+          ctx.lineTo(x + boxW - r, y);
+          ctx.quadraticCurveTo(x + boxW, y, x + boxW, y + r);
+          ctx.lineTo(x + boxW, y + boxH - r);
+          ctx.quadraticCurveTo(x + boxW, y + boxH, x + boxW - r, y + boxH);
+          ctx.lineTo(x + r, y + boxH);
+          ctx.quadraticCurveTo(x, y + boxH, x, y + boxH - r);
+          ctx.lineTo(x, y + r);
+          ctx.quadraticCurveTo(x, y, x + r, y);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = color;
+          ctx.fillText(pct, p.x, p.y + 0.5);
+        });
+        ctx.restore();
+      }
+    };
+    const sourceCompareDeltaLabelPlugin = {
+      id: "sourceCompareDeltaLabelPlugin",
+      afterDatasetsDraw(chart) {
+        const meta = chart.$deltaMeta;
+        if (!meta || !meta.labels || !meta.qtyValues) return;
+        const baseline = Number(meta.baselineWms);
+        if (!Number.isFinite(baseline) || baseline <= 0) return;
+
+        const xScale = chart.scales.x;
+        const yScale = chart.scales.y;
+        if (!xScale || !yScale) return;
+
+        const ctx = chart.ctx;
+        const colorByLabel = {
+          WMS: "#1b6b51",
+          D365: "#6366f1",
+          ACTUAL: "#1e293b"
+        };
+        const items = [];
+        meta.labels.forEach((lb, i) => {
+          if (lb === "WMS") return;
+          const qty = Number(meta.qtyValues[i] ?? 0);
+          if (!Number.isFinite(qty)) return;
+          const diffPct = ((qty - baseline) / baseline) * 100;
+          const word = diffPct >= 0 ? "over" : "under";
+          items.push({
+            label: lb,
+            text: `${word} ${Math.abs(diffPct).toFixed(2)}%`,
+            color: colorByLabel[lb] || "#334155"
+          });
+        });
+        if (!items.length) return;
+
+        ctx.save();
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.font = "700 11px Inter, sans-serif";
+        const topLimit = chart.chartArea.top + 10;
+        items.forEach((it, idx) => {
+          const textW = ctx.measureText(it.text).width;
+          const padX = 6;
+          const boxW = textW + padX * 2;
+          const boxH = 18;
+          const targetIndex = meta.labels.indexOf(it.label);
+          const qty = Number(meta.qtyValues[targetIndex] ?? 0);
+          let x = xScale.getPixelForValue(targetIndex);
+          // Use the real bar center to avoid offset errors when datasets are grouped/sparse.
+          for (let ds = 0; ds < chart.data.datasets.length; ds++) {
+            const dsMeta = chart.getDatasetMeta(ds);
+            const dsCfg = chart.data.datasets[ds];
+            if (!dsMeta || dsMeta.type !== "bar") continue;
+            const val = dsCfg?.data?.[targetIndex];
+            if (val == null) continue;
+            const el = dsMeta.data?.[targetIndex];
+            if (el && Number.isFinite(el.x)) {
+              x = el.x;
+              break;
+            }
+          }
+          const y = yScale.getPixelForValue(qty) - 12 - (idx * 2);
+          const boxX = x - boxW / 2;
+          const boxY = Math.max(topLimit, y - boxH + 2);
+          const r = 6;
+
+          ctx.fillStyle = "rgba(255,255,255,0.94)";
+          ctx.strokeStyle = it.color;
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.moveTo(boxX + r, boxY);
+          ctx.lineTo(boxX + boxW - r, boxY);
+          ctx.quadraticCurveTo(boxX + boxW, boxY, boxX + boxW, boxY + r);
+          ctx.lineTo(boxX + boxW, boxY + boxH - r);
+          ctx.quadraticCurveTo(boxX + boxW, boxY + boxH, boxX + boxW - r, boxY + boxH);
+          ctx.lineTo(boxX + r, boxY + boxH);
+          ctx.quadraticCurveTo(boxX, boxY + boxH, boxX, boxY + boxH - r);
+          ctx.lineTo(boxX, boxY + r);
+          ctx.quadraticCurveTo(boxX, boxY, boxX + r, boxY);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = it.color;
+          ctx.fillText(it.text, x, boxY + boxH / 2 + 0.5);
+        });
+
+        ctx.restore();
+      }
+    };
 
     function normalizeText(v) { return String(v == null ? "" : v).trim(); }
     function normalizedLower(v) { return normalizeText(v).toLowerCase(); }
@@ -615,6 +762,9 @@
     function renderCharts(rows) {
       const match = rows.filter((x) => x.status === "MATCH").length;
       const mismatch = rows.length - match;
+      const total = rows.length;
+      const matchPct = total > 0 ? (match / total) * 100 : 0;
+      const mismatchPct = total > 0 ? (mismatch / total) * 100 : 0;
       const hasActual = rows.some((x) => x.actual != null);
       const hasWms = rows.some((x) => x.wms != null);
       const hasD365 = rows.some((x) => x.d365 != null);
@@ -631,7 +781,18 @@
           labels: ["Match", "Mismatch"],
           datasets: [{ data: [match, mismatch], backgroundColor: ["#1b6b51", "#ba1a1a"], borderWidth: 0 }]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom" } }, cutout: "65%" }
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: "bottom",
+              onClick: () => {}
+            }
+          },
+          cutout: "65%"
+        },
+        plugins: [piePercentLabelPlugin]
       });
 
       const labels = [];
@@ -725,7 +886,12 @@
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { display: true, position: "top", labels: { usePointStyle: true } }
+            legend: {
+              display: true,
+              position: "top",
+              labels: { usePointStyle: true },
+              onClick: () => {}
+            }
           },
           scales: {
             y: { beginAtZero: true, title: { display: true, text: "Quantity" } },
@@ -738,8 +904,10 @@
               title: { display: true, text: "% Complete" }
             }
           }
-        }
+        },
+        plugins: [sourceCompareDeltaLabelPlugin]
       });
+      sourceBarChart.$deltaMeta = { labels, qtyValues, baselineWms: sumWms };
     }
 
     function setFileStatus(inputId, labelId) {
@@ -1061,11 +1229,17 @@
           options.scales.x.ticks = { ...(options.scales.x.ticks || {}), font: { size: 12, weight: "600" } };
           options.scales.y.ticks = { ...(options.scales.y.ticks || {}), font: { size: 11 } };
           options.scales.yPercent.ticks = { ...(options.scales.yPercent.ticks || {}), font: { size: 11 } };
-          new Chart(ctx, {
+          const expandedChart = new Chart(ctx, {
+            // Keep same behavior as the main chart including custom label plugin.
             type: "bar",
             data: JSON.parse(JSON.stringify(data)),
-            options
+            options,
+            plugins: [sourceCompareDeltaLabelPlugin]
           });
+          if (expandedChart && sourceBarChart?.$deltaMeta) {
+            expandedChart.$deltaMeta = JSON.parse(JSON.stringify(sourceBarChart.$deltaMeta));
+            expandedChart.update();
+          }
         }
       });
     });
