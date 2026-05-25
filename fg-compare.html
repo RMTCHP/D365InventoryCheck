@@ -839,11 +839,6 @@
           ];
 
       if (hasActual) {
-        const gapValues = labels.map((lb) => {
-          if (lb === "WMS") return Math.abs(sumActual - sumWms);
-          if (lb === "D365") return Math.abs(sumActual - sumD365);
-          return 0;
-        });
         const pctValues = labels.map((lb) => {
           if (lb === "WMS") return sumActual > 0 ? (sumWms / sumActual) * 100 : 0;
           if (lb === "D365") return sumActual > 0 ? (sumD365 / sumActual) * 100 : 0;
@@ -851,16 +846,6 @@
         });
 
         datasets.push(
-          {
-            type: "bar",
-            label: "Gap",
-            data: gapValues,
-            backgroundColor: "#ef4444",
-            borderRadius: 8,
-            yAxisID: "y",
-            categoryPercentage: 0.62,
-            barPercentage: 0.78
-          },
           {
             type: "line",
             label: "% Complete",
