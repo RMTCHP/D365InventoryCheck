@@ -715,16 +715,17 @@
               <select id="mainProcess">
                 <option value="">ทุกกระบวนการ</option>
                 <option value="ผสมผง">ผสมผง</option>
-                <option value="Compact">Compact</option>
-                <option value="Sinter">Sinter</option>
-                <option value="Finishing">Finishing</option>
-                <option value="Machining">Machining</option>
-                <option value="Sub Store">Sub Store</option>
-                <option value="Final Inspection">Final Inspection</option>
-                <option value="Magna flux">Magna flux</option>
-                <option value="Sort">Sort</option>
-                <option value="Pack">Pack</option>
-                <option value="Rework">Rework</option>
+                <option value="Sinter (S)">Sinter (S)</option>
+                <option value="Steam 1 (STE,TEM)">Steam 1 (STE,TEM)</option>
+                <option value="Finishing Area 1 (RP,RO,OD,OG,BR,ESE,SB)">Finishing Area 1 (RP,RO,OD,OG,BR,ESE,SB)</option>
+                <option value="Sub-Store 1 (HT,UT,L,MC,NCL,SEM)">Sub-Store 1 (HT,UT,L,MC,NCL,SEM)</option>
+                <option value="Machining (D,F,L,MC,NCL,GC,UT)">Machining (D,F,L,MC,NCL,GC,UT)</option>
+                <option value="Finishing Area 2">Finishing Area 2</option>
+                <option value="Steam 2 (STE)">Steam 2 (STE)</option>
+                <option value="Sub-Store 2 (STE , K)">Sub-Store 2 (STE , K)</option>
+                <option value="Rework Area (SELD)">Rework Area (SELD)</option>
+                <option value="Sorting &amp; Packing Area (SEM,SEMT,SEL,K,KON)">Sorting &amp; Packing Area (SEM,SEMT,SEL,K,KON)</option>
+                <option value="FG">FG</option>
               </select>
             </div>
             <div class="input-group">
@@ -778,6 +779,7 @@
                     <th><i class="fas fa-cogs"></i> กระบวนการหลัก</th>
                     <th><i class="fas fa-puzzle-piece"></i> กระบวนการย่อย</th>
                     <th><i class="fas fa-flag"></i> สถานะ</th>
+                    <th><i class="fas fa-file"></i> ชื่อไฟล์</th>
                     <th><i class="fas fa-hashtag"></i> จำนวน</th>
                     <th><i class="fas fa-user"></i> ผู้สแกน</th>
                   </tr>
@@ -989,7 +991,7 @@
     return;
   }
 
-  const url = 'https://script.google.com/macros/s/AKfycbx-FXhsv8b5owx7CEMhfi_P8wPKQ__Lkvm8amVse4YDJVTMBHGl6VSvyUugDq4PBNi3/exec?page=getInventory';
+  const url = 'https://script.google.com/macros/s/AKfycbwioDL_aFmIjEbqHkKZ88jr_Ku32XwlHZVo1PZKRyuHXjlDjXANNEnHuY-hghVFgema/exec?page=getInventory';
 
   const tbody = document.getElementById('tableBody');
   const summaryDiv = document.getElementById('summary');
@@ -1014,8 +1016,7 @@
       const itemDate = new Date(item.Timestamp);
 
       const matchDate = itemDate >= startDateObj && itemDate <= endDateObj;
-      const matchProcess = !selectedProcess || 
-      (item.mainProcess || '').trim() === selectedProcess.trim();
+      const matchProcess = !selectedProcess || item.mainProcess === selectedProcess;
 
       const itemBarcodeStr = String(item.Barcode || '');
       const matchBarcode = !barcodeKeyword || itemBarcodeStr.toLowerCase().includes(barcodeKeyword);
@@ -1035,7 +1036,7 @@
       text: `ไม่สามารถดึงข้อมูลจากเซิร์ฟเวอร์ได้: ${error.message || String(error)}`,
       confirmButtonColor: '#dc2626',
     });
-    tbody.innerHTML = `<tr><td colspan="7" class="error"><i class="fas fa-exclamation-triangle"></i><div>เกิดข้อผิดพลาด: ${error.message || String(error)}</div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="error"><i class="fas fa-exclamation-triangle"></i><div>เกิดข้อผิดพลาด: ${error.message || String(error)}</div></td></tr>`;
     summaryDiv.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle"></i><div>เกิดข้อผิดพลาด: ${error.message || String(error)}</div></div>`;
     paginationControls.style.display = 'none';
   } finally {
@@ -1063,8 +1064,18 @@
 
         // Define all possible processes for summary cards
         const allProcesses = [
-          'ผสมผง', 'Compact', 'Sinter', 'Finishing', 'Machining',
-          'Sub Store', 'Final Inspection', 'Magna flux', 'Sort', 'Pack', 'Rework',
+          'ผสมผง',
+          'Sinter (S)',
+          'Steam 1 (STE,TEM)',
+          'Finishing Area 1 (RP,RO,OD,OG,BR,ESE,SB)',
+          'Sub-Store 1 (HT,UT,L,MC,NCL,SEM)',
+          'Machining (D,F,L,MC,NCL,GC,UT)',
+          'Finishing Area 2',
+          'Steam 2 (STE)',
+          'Sub-Store 2 (STE , K)',
+          'Rework Area (SELD)',
+          'Sorting & Packing Area (SEM,SEMT,SEL,K,KON)',
+          'FG'
         ];
 
         // Initialize process counts
@@ -1074,12 +1085,12 @@
         });
 
         // Aggregate quantity by main process (fix trim issue)
-data.forEach((row) => {
-  const proc = (row.mainProcess || '').trim();   // 🔥 ตัดช่องว่างหัวท้าย
-  if (allProcesses.includes(proc)) {
-    processCount[proc] += Number(row.Quantity || 0);
-  }
-});
+        data.forEach((row) => {
+          const proc = row.mainProcess || 'อื่นๆ';
+          if (allProcesses.includes(proc)) {
+            processCount[proc] += Number(row.Quantity || 0);
+          }
+        });
 
 
         // Generate HTML for process summary cards
@@ -1147,7 +1158,7 @@ data.forEach((row) => {
         const dataToDisplay = allFilteredData.slice(startIndex, endIndex);
 
         if (dataToDisplay.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="7" class="no-data"><i class="fas fa-inbox"></i><div>ไม่พบข้อมูลในหน้านี้</div></td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="8" class="no-data"><i class="fas fa-inbox"></i><div>ไม่พบข้อมูลในหน้านี้</div></td></tr>`;
           paginationControls.style.display = 'none';
           return;
         }
@@ -1159,6 +1170,7 @@ data.forEach((row) => {
            const adjustedDate = adjustTimeByHours(row.Timestamp, 0);
            const formattedDate = formatDateToAD(adjustedDate);
            const displayBarcode = String(row.Barcode || '').trim();
+           const displayFileName = row.fileName || row.FileName || row['File Name'] || '-';
 
             return `
   <tr>
@@ -1167,6 +1179,7 @@ data.forEach((row) => {
     <td>${row.mainProcess || '-'}</td>
     <td>${row.subProcess || '-'}</td>
     <td><span class="status">${row.status || '-'}</span></td>
+    <td>${displayFileName}</td>
     <td><strong>${(row.Quantity || 0).toLocaleString()}</strong></td>
     <td>${row.Scanner || '-'}</td>
   </tr>
@@ -1317,6 +1330,7 @@ function formatDateToAD(dateInput) {
 
       const barcode = String(row.Barcode || '').trim();
       const qty = Number(row.Quantity || 0);
+      const exportFileName = row.fileName || row.FileName || row['File Name'] || '-';
 
       return [
         formattedDate,
@@ -1326,6 +1340,7 @@ function formatDateToAD(dateInput) {
         row.status || '-',
         qty,
         row.Scanner || '-',
+        exportFileName,
       ];
     });
 
@@ -1340,12 +1355,15 @@ function formatDateToAD(dateInput) {
     }
 
     const ws = XLSX.utils.aoa_to_sheet([
-      ['วันที่', 'Barcode', 'กระบวนการหลัก', 'กระบวนการย่อย', 'สถานะ', 'จำนวน', 'ผู้สแกน'],
+      ['วันที่', 'Barcode', 'กระบวนการหลัก', 'กระบวนการย่อย', 'สถานะ', 'จำนวน', 'ผู้สแกน', 'ชื่อไฟล์'],
       ...rows,
     ]);
 
-    XLSX.utils.book_append_sheet(wb, ws, 'Inventory TAG Report');
-    XLSX.writeFile(wb, `Inventory_Report_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    XLSX.utils.book_append_sheet(wb, ws, 'Inventory TAG Report (CHP)');
+    const now = new Date();
+    const datePart = now.toISOString().slice(0, 10);
+    const timePart = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
+    XLSX.writeFile(wb, `Inventory_Report_CHP_${datePart}_${timePart}.xlsx`);
 
     Swal.fire({
       icon: 'success',
