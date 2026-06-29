@@ -1,7 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>📦 บันทึก Inventory TAG</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
@@ -337,9 +338,9 @@
   </style>
 </head>
 <body>
-    <!-- ✅ Fixed Head Bar -->
+    <!-- Fixed Head Bar -->
   <div class="fixed-header">
-    📦 RMT InventoryTAG CHP
+    📦 RMT InventoryTAG CHP v3
   </div>
   
   <div class="container">
@@ -356,7 +357,7 @@
         </div>
       </div>
 
-      <!-- ✅ Tag No. (show only, not saved) -->
+      <!-- Tag No. (show only, not saved) -->
 <div class="form-group" id="tagNoGroup" style="display:none;">
   <label class="form-label">Tag No.</label>
   <div id="tagNoText" class="form-control" style="background:#f1f5f9; font-weight:700; color:#0f172a;">
@@ -371,39 +372,52 @@
   <select id="mainProcess" class="form-control" onchange="handleMainProcessChange()">
     <option value="">-- เลือกกระบวนการหลัก --</option>
     <option value="ผสมผง">ผสมผง</option>
-    <option value="Compact">Compact</option>
-    <option value="Sinter & Steam">Sinter & Steam</option>
-    <option value="Finishing">Finishing</option>
-    <option value="Machining">Machining</option>
-    <option value="Sub Store">Sub Store</option>
-    <option value="Final Inspection">Final Inspection</option>
-    <option value="Magna flux">Magna flux</option>
-    <option value="Sort">Sort</option>
-    <option value="Pack">Pack</option>
-    <option value="Rework">Rework</option>
+    <option value="Sinter (S)">Sinter (S)</option>
+    <option value="Steam 1 (STE,TEM)">Steam 1 (STE,TEM)</option>
+    <option value="Finishing Area 1 (RP,RO,OD,OG,BR,ESE,SB)">Finishing Area 1 (RP,RO,OD,OG,BR,ESE,SB)</option>
+    <option value="Sub-Store 1 (HT,UT,L,MC,NCL,SEM)">Sub-Store 1 (HT,UT,L,MC,NCL,SEM)</option>
+    <option value="Machining (D,F,L,MC,NCL,GC,UT)">Machining (D,F,L,MC,NCL,GC,UT)</option>
+    <option value="Finishing Area 2">Finishing Area 2</option>
+    <option value="Steam 2 (STE)">Steam 2 (STE)</option>
+    <option value="Sub-Store 2 (STE , K)">Sub-Store 2 (STE , K)</option>
+    <option value="Rework Area (SELD)">Rework Area (SELD)</option>
+    <option value="Sorting &amp; Packing Area (SEM,SEMT,SEL,K,KON)">Sorting &amp; Packing Area (SEM,SEMT,SEL,K,KON)</option>
+    <option value="FG">FG</option>
   </select>
 </div>
 
 <!-- 🔽 กระบวนการย่อย -->
 <div class="form-group">
   <label class="form-label">กระบวนการย่อย</label>
-  <select id="subProcess" class="form-control">
+  <select id="subProcess" class="form-control" onchange="handleSubProcessChange()">
     <option value="">-- เลือกกระบวนการย่อย --</option>
   </select>
 </div>
-        <!-- 🔽 เลือกสถานะ -->
-        <div class="form-group">
+
+<!-- 🔽 เลือกสถานะ -->
+<div class="form-group" id="statusGroup" style="display:none;">
   <label for="status" class="form-label">สถานะ</label>
-  <select id="status" class="form-control">
-  <option value="">-- เลือกสถานะ --</option>
-</select>
+  <select id="status" class="form-control" onchange="handleStatusChange()">
+    <option value="">-- เลือกสถานะ --</option>
+  </select>
 </div>
 
-        <label class="form-label">จำนวน</label>
-        <input type="number" id="quantity" inputmode="numeric" class="form-control" placeholder="ระบุจำนวน">
+<div class="form-group" id="newStatusGroup" style="display:none;">
+  <label for="newStatus" class="form-label">สถานะใหม่</label>
+  <select id="newStatus" class="form-control" disabled>
+    <option value="">-- เลือกสถานะใหม่ --</option>
+  </select>
+</div>
+
+<div class="form-group" id="fileNameGroup" style="display:none;">
+  <label for="fileName" class="form-label">ชื่อไฟล์</label>
+  <input type="text" id="fileName" class="form-control" placeholder="ระบุชื่อไฟล์">
+</div>
+
+<label class="form-label">จำนวน</label>
+<input type="number" id="quantity" inputmode="numeric" class="form-control" placeholder="ระบุจำนวน">
       </div>
 
-      
       <div class="form-group">
         <label class="form-label">ชื่อผู้สแกน</label>
         <input type="text" id="scanner" class="form-control" placeholder="ชื่อผู้สแกน">
@@ -449,21 +463,27 @@
   <audio id="beep" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" preload="auto"></audio>
 
   <script>
-  const apiURL = "https://script.google.com/macros/s/AKfycbx-FXhsv8b5owx7CEMhfi_P8wPKQ__Lkvm8amVse4YDJVTMBHGl6VSvyUugDq4PBNi3/exec";
+  const apiURL = "https://script.google.com/macros/s/AKfycbwioDL_aFmIjEbqHkKZ88jr_Ku32XwlHZVo1PZKRyuHXjlDjXANNEnHuY-hghVFgema/exec";
   let codeReader;
 
-  function extractTagNoFromQrText(qrText) {
+function extractTagNoFromQrText(qrText) {
   const s = String(qrText || '').trim();
   if (!s) return '';
 
+  // à¹à¸¢à¸à¸”à¹‰à¸§à¸¢ / à¹à¸¥à¹‰à¸§à¸•à¸±à¸”à¸Šà¹ˆà¸­à¸‡à¸§à¹ˆà¸²à¸‡ + à¸•à¸±à¸”à¸­à¸±à¸™à¸—à¸µà¹ˆà¸§à¹ˆà¸²à¸‡
   const parts = s.split('/').map(x => x.trim()).filter(Boolean);
   if (parts.length === 0) return '';
 
+  // à¸«à¸² index à¸‚à¸­à¸‡ "MW6 Demo" (à¹„à¸¡à¹ˆà¸ªà¸™à¸•à¸±à¸§à¸žà¸´à¸¡à¸žà¹Œà¹€à¸¥à¹‡à¸/à¹ƒà¸«à¸à¹ˆ)
   const mwIndex = parts.findIndex(p => /^MW6\s*Demo$/i.test(p));
+
+  // âœ… à¸–à¹‰à¸²à¸¡à¸µ MW6 Demo -> à¹€à¸­à¸²à¸à¸¥à¸¸à¹ˆà¸¡à¸à¹ˆà¸­à¸™à¸«à¸™à¹‰à¸² MW6 Demo
   if (mwIndex > 0) return parts[mwIndex - 1];
 
+  // âœ… à¸–à¹‰à¸²à¹„à¸¡à¹ˆà¸¡à¸µ MW6 Demo -> à¹€à¸­à¸²à¸à¸¥à¸¸à¹ˆà¸¡à¸ªà¸¸à¸”à¸—à¹‰à¸²à¸¢
   return parts[parts.length - 1];
 }
+
 
 function updateTagNoUI(qrText) {
   const tagNo = extractTagNoFromQrText(qrText);
@@ -479,6 +499,155 @@ function updateTagNoUI(qrText) {
   }
 }
 
+const processRules = {
+  "ผสมผง": [
+    { status: "ผงเหล็ก(RM)", subValue: "RM", newStatus: "ผงเหล็ก" },
+    { status: "ผงปั่น(Mix)", subValue: "Mix", newStatus: "ผงปั่น" }
+  ],
+  "Sinter (S)": [
+    { status: "Wait for Sinter (Green Part) (Co)", subValue: "Co", newStatus: "Wait for Sinter (Green Part)" },
+    { status: "Quarantine (Green Part) (Co)", subValue: "Co", newStatus: "Quarantine (Green Part)" },
+    { status: "Sinter O.K (Si)", subValue: "Si", newStatus: "Sinter O.K" },
+    { status: "Quarantine Sinter O.K (Si)", subValue: "Si", newStatus: "Quarantine Sinter O.K" }
+  ],
+  "Steam 1 (STE,TEM)": [
+    { status: "B/F Steam (Si)", subValue: "Si", newStatus: "B/F Steam" },
+    { status: "Quarantine Steam 1 (STE,TEM) (Si)", subValue: "Si", newStatus: "Quarantine" }
+  ],
+  "Finishing Area 1 (RP,RO,OD,OG,BR,ESE,SB)": [
+    { status: "B/F Sizing (Fi)", subValue: "Fi", newStatus: "B/F Sizing" },
+    { status: "A/F Sizing (Fi)", subValue: "Fi", newStatus: "A/F Sizing" },
+    { status: "B/F Rolling (Fi)", subValue: "Fi", newStatus: "B/F Rolling" },
+    { status: "A/F Rolling (Fi)", subValue: "Fi", newStatus: "A/F Rolling" },
+    { status: "Rumble - Oil - Dry -Impregnation (Fi)", subValue: "Fi", newStatus: "Rumble - Oil - Dry -Impregnation" },
+    { status: "Wait for Check Crack (Fi)", subValue: "Fi", newStatus: "Wait for Check Crack" },
+    { status: "B/F Shot blast (Fi)", subValue: "Fi", newStatus: "B/F Shot blast" },
+    { status: "A/F Shot blast (Fi)", subValue: "Fi", newStatus: "A/F Shot blast" },
+    { status: "OK (Blank Wait for Sub-Contract) (Fi)", subValue: "Fi", newStatus: "OK (Blank Wait for Sub-Contract)" },
+    { status: "Quarantine Finishing Area 1 (RP,RO,OD,OG,BR,ESE,SB) (Fi)", subValue: "Fi", newStatus: "Quarantine" }
+  ],
+  "Sub-Store 1 (HT,UT,L,MC,NCL,SEM)": [
+    { status: "Blank Wait for Sub-Contract (Fi)", subValue: "Fi", newStatus: "Blank Wait for Sub-Contract" },
+    { status: "Blank Wait for M/F,Rumble,Steam,Sort G1P (Fi)", subValue: "Fi", newStatus: "Blank Wait for M/F,Rumble,Steam Sort G1P" },
+    { status: "Quarantine Blank Wait for Sub-Contract (Fi)", subValue: "Fi", newStatus: "Quarantine Blank Wait for Sub-Contract" },
+    { status: "Sub-contract Area (A) (Fi)", subValue: "Fi", newStatus: "Sub-contract Area (A)" },
+    { status: "Quarantine Sub-con (A) (Fi)", subValue: "Fi", newStatus: "Quarantine Sub-con (A)" },
+    { status: "Sub-contract Area (B) (Su)", subValue: "Su", newStatus: "Sub-contract Area (B)" },
+    { status: "Quarantine Sub-con (B) (Su)", subValue: "Su", newStatus: "Quarantine Sub-con (B)" }
+  ],
+  "Machining (D,F,L,MC,NCL,GC,UT)": [
+    { status: "Blank Wait for Machining 1 (OP1,OP2,F) (Fi)", subValue: "Fi", newStatus: "Blank Wait for Machining 1 (OP1,OP2,F)" },
+    { status: "Blank Wait for Machining (Shot blast) (Ma)", subValue: "Ma", newStatus: "Blank Wait for Machining (Shot blast)" },
+    { status: "Blank Wait for Machining (Grinding) (Ma)", subValue: "Ma", newStatus: "Blank Wait for Machining (Grinding)" },
+    { status: "Blank Wait for Sub-Contract (Su)", subValue: "Su", newStatus: "Blank Wait for Sub-Contract" },
+    { status: "Blank Wait for Steam (Su)", subValue: "Su", newStatus: "Blank Wait for Steam" },
+    { status: "Quarantine Machining (D,F,L,MC,NCL,GC,UT) (Ma)", subValue: "Ma", newStatus: "Quarantine" },
+    { status: "Blank Wait for Machining A/F HT/BR/OP3 (Ma)", subValue: "Ma", newStatus: "Blank Wait for Machining A/F HT/BR/OP3" }
+  ],
+  "Finishing Area 2": [
+    { status: "Rumble - Oil (Ma)", subValue: "Ma", newStatus: "Rumble - Oil" },
+    { status: "Rumble - Oil OK ( Wait  for Sorting) (So)", subValue: "So", newStatus: "Rumble - Oil OK ( Wait  for Sorting)" },
+    { status: "Quarantine Rumble - Oil (So)", subValue: "So", newStatus: "Quarantine Rumble - Oil" }
+  ],
+  "Steam 2 (STE)": [
+    { status: "B/F Steam  (Su)", subValue: "Su", newStatus: "B/F Steam" },
+    { status: "A/F Steam (Wait for Sub-Contract)  (Ma)", subValue: "Ma", newStatus: "A/F Steam (Wait for Sub-Contract)" },
+    { status: "Quarantine Steam 2 (STE) (Ma)", subValue: "Ma", newStatus: "Quarantine" }
+  ],
+  "Sub-Store 2 (STE , K)": [
+    { status: "Wait  for Sorting  (So)", subValue: "So", newStatus: "Wait  for Sorting" },
+    { status: "Quarantine Sub-Store 2 (STE , K) (So)", subValue: "So", newStatus: "Quarantine" }
+  ],
+  "Rework Area (SELD)": [
+    { status: "Rework Blank Part (Sorting before send sub-con) (Fi)", subValue: "Fi", newStatus: "Rework Blank Part (Sorting before send sub-con)" }
+  ],
+  "Sorting & Packing Area (SEM,SEMT,SEL,K,KON)": [
+    { status: "Wait for Magna Flux (Blank Part)  (Fi)", subValue: "Fi", newStatus: "Wait for Magna Flux (Blank Part)" },
+    { status: "Magna Flux O.K (Blank Part) (Fi)", subValue: "Fi", newStatus: "Magna Flux O.K (Blank Part)" },
+    { status: "Wait for Magna Flux (A/F Machining 1 ) (SU)", subValue: "SU", newStatus: "Wait for Magna Flux (A/F Machining 1 )" },
+    { status: "Magna Flux O.K (A/F Machining 1) (Su)", subValue: "Su", newStatus: "Magna Flux O.K (A/F Machining 1)" },
+    { status: "Wait for Magna Flux (Sorting Part) (So)", subValue: "So", newStatus: "Wait for Magna Flux (Sorting Part)" },
+    { status: "Magna Flux O.K (Sorting Part) (So)", subValue: "So", newStatus: "Magna Flux O.K (Sorting Part)" },
+    { status: "Quarantine Magna Flux (So)", subValue: "So", newStatus: "Quarantine Magna Flux" },
+    { status: "Wait  for Sorting 100% (SELD) (So)", subValue: "So", newStatus: "Wait  for Sorting 100% (SELD)" },
+    { status: "Wait  for Sorting  (SEL,K) (So)", subValue: "So", newStatus: "Wait  for Sorting  (SEL,K)" },
+    { status: "Quarantine Part after sorting (So)", subValue: "So", newStatus: "Quarantine Part after sorting" },
+    { status: "Wait  for Scrap Part after sorting (So)", subValue: "So", newStatus: "Wait  for Scrap Part after sorting" },
+    { status: "Wait  for Pack (So)", subValue: "So", newStatus: "Wait  for Pack" },
+    { status: "Quarantine Pack (So)", subValue: "So", newStatus: "Quarantine Pack" }
+  ],
+  "FG": [
+    { status: "G1-FG1", subValue: "G1-FG1", newStatus: "G1-FG1" },
+    { status: "G1-FGPM", subValue: "G1-FGPM", newStatus: "G1-FGPM" }
+  ]
+};
+
+function getNewStatusOptions(mainProcess, subProcess, currentStatus) {
+  const main = String(mainProcess || "").trim();
+  const sub = String(subProcess || "").trim();
+  const status = String(currentStatus || "").trim();
+  if (!main || !sub || !status) return [];
+
+  const rows = processRules[main] || [];
+  const matched = rows
+    .filter((row) => row.subValue === sub && row.status === status)
+    .map((row) => row.newStatus);
+
+  return [...new Set(matched)];
+}
+
+function handleStatusChange() {
+  const main = document.getElementById("mainProcess").value.trim();
+  const sub = document.getElementById("subProcess").value.trim();
+  const statusValue = document.getElementById("status").value.trim();
+  const newStatusSelect = document.getElementById("newStatus");
+  const fileNameGroup = document.getElementById("fileNameGroup");
+  const fileNameInput = document.getElementById("fileName");
+
+  const options = getNewStatusOptions(main, sub, statusValue);
+  newStatusSelect.innerHTML = "";
+
+  const requiresFileName = statusValue.includes("ผงปั่น");
+  if (requiresFileName) {
+    fileNameGroup.style.display = "";
+  } else {
+    fileNameGroup.style.display = "none";
+    fileNameInput.value = "";
+  }
+
+  if (!statusValue || options.length === 0) {
+    newStatusSelect.disabled = true;
+    newStatusSelect.style.backgroundColor = "#e5e7eb";
+    newStatusSelect.innerHTML = "<option value=''>-- เลือกสถานะใหม่ --</option>";
+    return;
+  }
+
+  if (options.length === 1) {
+    newStatusSelect.disabled = true;
+    newStatusSelect.style.backgroundColor = "#e5e7eb";
+    const option = document.createElement("option");
+    option.value = options[0];
+    option.text = options[0];
+    newStatusSelect.appendChild(option);
+    return;
+  }
+
+  newStatusSelect.disabled = false;
+  newStatusSelect.style.backgroundColor = "#ffffff";
+
+  const defaultOption = document.createElement("option");
+  defaultOption.value = "";
+  defaultOption.text = "-- เลือกสถานะใหม่ --";
+  newStatusSelect.appendChild(defaultOption);
+
+  options.forEach((item) => {
+    const option = document.createElement("option");
+    option.value = item;
+    option.text = item;
+    newStatusSelect.appendChild(option);
+  });
+}
+
 
   async function submitBarcode() {
   const barcode = document.getElementById("barcode").value.trim();
@@ -486,15 +655,43 @@ function updateTagNoUI(qrText) {
   const quantity = document.getElementById("quantity").value.trim();
   const scanner = document.getElementById("scanner").value.trim();
   const mainProcess = document.getElementById("mainProcess").value.trim();
-  const subProcess = document.getElementById("subProcess").value.trim();
-  const status = document.getElementById("status").value.trim();
 
-  // ✅ ตรวจสอบให้ครบทุกช่องที่จำเป็น
-  if (!barcode || !quantity || !scanner || !mainProcess || !subProcess || !status) {
+  const subProcessEl = document.getElementById("subProcess");
+  const statusEl = document.getElementById("status");
+  const newStatusEl = document.getElementById("newStatus");
+  const fileName = document.getElementById("fileName").value.trim();
+
+  // ✅ หาก dropdown ถูก disable ให้ส่ง "ไม่มี"
+  const subProcess = subProcessEl.value.trim();
+  const status = statusEl.disabled
+  ? (statusEl.options[statusEl.selectedIndex]?.value
+     || statusEl.options[0]?.value
+     || statusEl.options[0]?.textContent
+     || "ไม่มี")
+  : statusEl.value.trim();
+  const newStatus = newStatusEl.disabled
+  ? (newStatusEl.options[newStatusEl.selectedIndex]?.value
+     || newStatusEl.options[0]?.value
+     || newStatusEl.options[0]?.textContent
+     || "ไม่มี")
+  : newStatusEl.value.trim();
+  const requiresFileName = status.includes("ผงปั่น");
+
+  // ✅ ตรวจเฉพาะ field ที่ต้องไม่ว่างจริง ๆ
+  if (!barcode || !quantity || !scanner || !mainProcess || !subProcess || !status || !newStatus) {
     Swal.fire({
       icon: "error",
       title: "กรอกข้อมูลไม่ครบ",
       text: "กรุณากรอกข้อมูลให้ครบทุกช่อง",
+    });
+    return;
+  }
+
+  if (requiresFileName && !fileName) {
+    Swal.fire({
+      icon: "warning",
+      title: "กรุณากรอกชื่อไฟล์",
+      text: "สถานะผงปั่นต้องระบุชื่อไฟล์ก่อนบันทึก",
     });
     return;
   }
@@ -509,10 +706,11 @@ function updateTagNoUI(qrText) {
     return;
   }
 
-  // ✅ ดึงชื่อเต็มของ subProcess
-  const subProcessText = document.querySelector('#subProcess option:checked')?.textContent || '-';
-  const mainProcessText = mainProcess || '-';
-  const statusText = status || '-';
+  // ✅ แสดงข้อมูลสำหรับยืนยัน
+  const subProcessText = subProcessEl.options[subProcessEl.selectedIndex]?.textContent || subProcess;
+  const statusText = statusEl.options[statusEl.selectedIndex]?.textContent || status;
+  const newStatusText = newStatusEl.options[newStatusEl.selectedIndex]?.textContent || newStatus;
+  const mainProcessText = mainProcess || "-";
 
   const confirmResult = await Swal.fire({
     title: "ยืนยันข้อมูลก่อนบันทึก",
@@ -523,12 +721,13 @@ function updateTagNoUI(qrText) {
           <p>${barcode}</p>
           ${tagNo ? `<p><strong>🏷️ Tag No.:</strong> ${tagNo}</p>` : ``}
         </fieldset>
-
         <fieldset style="border: 1px solid #ccc; padding: 10px;">
           <legend><strong>📋 รายละเอียด</strong></legend>
           <p><strong>⚙️ กระบวนการหลัก:</strong> ${mainProcessText}</p>
           <p><strong>🧩 กระบวนการย่อย:</strong> ${subProcessText}</p>
           <p><strong>📌 สถานะ:</strong> ${statusText}</p>
+          <p><strong>🆕 สถานะใหม่:</strong> ${newStatusText}</p>
+          ${fileName ? `<p><strong>📄 ชื่อไฟล์:</strong> ${fileName}</p>` : ``}
           <p><strong>🔢 จำนวน:</strong> ${quantity}</p>
           <p><strong>👤 ผู้สแกน:</strong> ${scanner}</p>
         </fieldset>
@@ -542,6 +741,7 @@ function updateTagNoUI(qrText) {
 
   if (!confirmResult.isConfirmed) return;
 
+  // ✅ แสดง loading ขณะส่งข้อมูล
   Swal.fire({
     title: "กำลังบันทึกข้อมูล...",
     allowOutsideClick: false,
@@ -551,9 +751,9 @@ function updateTagNoUI(qrText) {
   });
 
   try {
-    const res = await fetch(`${apiURL}?page=submitBarcode&barcode=${barcode}&quantity=${quantity}&scanner=${scanner}&mainProcess=${mainProcess}&subProcess=${subProcess}&status=${status}`, {
-  method: "POST"
-});
+    const res = await fetch(`${apiURL}?page=submitBarcode&barcode=${barcode}&quantity=${quantity}&scanner=${scanner}&mainProcess=${mainProcess}&subProcess=${subProcess}&status=${status}&fileName=${fileName}`, {
+      method: "POST"
+    });
     const data = await res.json();
 
     if (data.success) {
@@ -563,13 +763,23 @@ function updateTagNoUI(qrText) {
         timer: 2000,
         showConfirmButton: false,
       });
+
+      // ✅ รีเซ็ตฟอร์ม
       document.getElementById("barcode").value = "";
-      updateTagNoUI(''); // ✅ เพิ่ม
+      updateTagNoUI(''); // ✅ เพิ่มบรรทัดนี้
       document.getElementById("quantity").value = "";
       document.getElementById("mainProcess").value = "";
+
       document.getElementById("subProcess").innerHTML = "<option value=''>-- เลือกกระบวนการย่อย --</option>";
       document.getElementById("subProcess").disabled = true;
+
       document.getElementById("status").innerHTML = "<option value=''>-- เลือกสถานะ --</option>";
+      document.getElementById("status").disabled = true;
+      document.getElementById("newStatus").innerHTML = "<option value=''>-- เลือกสถานะใหม่ --</option>";
+      document.getElementById("newStatus").disabled = true;
+      document.getElementById("fileName").value = "";
+      document.getElementById("fileNameGroup").style.display = "none";
+
     } else {
       Swal.fire({
         icon: "error",
@@ -603,7 +813,7 @@ async function startScanner() {
   videoElem.style.objectFit = "cover";
 
   const container = document.getElementById("scanner-container");
-  container.innerHTML = ""; // ล้างก่อน
+  container.innerHTML = ""; // à¸¥à¹‰à¸²à¸‡à¸à¹ˆà¸­à¸™
   container.appendChild(videoElem);
 
   try {
@@ -612,19 +822,19 @@ async function startScanner() {
       if (result) {
         const cleanedText = result.text.replace(/\s*MW6 Demo\s*$/i, '').trim();
         document.getElementById("barcode").value = cleanedText;
-        updateTagNoUI(cleanedText); // ✅ เพิ่ม
+        updateTagNoUI(cleanedText); // âœ… à¹€à¸žà¸´à¹ˆà¸¡
         document.getElementById("beep").play();
         stopScanner();
       }
     });
   } catch (err) {
-    console.error("ไม่สามารถเปิดกล้อง:", err);
-    Swal.fire({ icon: "error", title: "❌ ไม่สามารถเปิดกล้อง", text: err.message });
+    console.error("à¹„à¸¡à¹ˆà¸ªà¸²à¸¡à¸²à¸£à¸–à¹€à¸›à¸´à¸”à¸à¸¥à¹‰à¸­à¸‡:", err);
+    Swal.fire({ icon: "error", title: "âŒ à¹„à¸¡à¹ˆà¸ªà¸²à¸¡à¸²à¸£à¸–à¹€à¸›à¸´à¸”à¸à¸¥à¹‰à¸­à¸‡", text: err.message });
     stopScanner();
   }
 }
 
-// 🔴 หยุดการสแกน
+// ðŸ”´ à¸«à¸¢à¸¸à¸”à¸à¸²à¸£à¸ªà¹à¸à¸™
 function stopScanner() {
   if (codeReader) {
     codeReader.reset();
@@ -633,165 +843,116 @@ function stopScanner() {
   document.getElementById("scanner-view").style.display = "none";
   document.getElementById("main-view").style.display = "block";
 }
-function handleMainProcessChange() {
-  const main = document.getElementById("mainProcess").value;
-  const sub = document.getElementById("subProcess");
-  const statusSelect = document.getElementById("status");
 
-  sub.innerHTML = "";
+function handleSubProcessChange() {
+  const main = document.getElementById("mainProcess").value;
+  const subSelect = document.getElementById("subProcess");
+  const subValue = subSelect.value;
+  const selectedOption = subSelect.options[subSelect.selectedIndex];
+  const subLabel = selectedOption?.dataset?.subLabel || "";
+  const statusSelect = document.getElementById("status");
+  const rows = processRules[main] || [];
+  const statuses = [...new Set(
+    rows
+      .filter((row) => row.subValue === subValue && row.status === subLabel)
+      .map((row) => row.status)
+  )];
   statusSelect.innerHTML = "";
 
-  const subOptions = {
-    "Compact": [["P", "P - Compact"]],
-    "Sinter & Steam": [
-      ["S", "S - Sinter"],
-      ["STE", "STE - Steam"],
-      ["TEMP", "TEMP - Temper"],
-      ["MW", "MW - MachineWash"]
-    ],
-    "Finishing": [
-      ["ESE", "ESE - Chk. Crack"],
-      ["OD", "OD - Oil Dip"],
-      ["BR", "BR - Barrel"],
-      ["H", "H - De-burring"],
-      ["DRY", "DRY - Drying"],
-      ["SB", "SB - Shot blast"],
-      ["R", "R - Impreganate"],
-      ["OG", "OG - Impreganate"],
-      ["U", "U - UitraSonicWash"],
-      ["DR", "DR - DrawingPress(Sizing)"],
-      ["RP", "RP - Sizing"],
-      ["RO", "RO - Rolling"]
-    ],
-    "Machining": [
-      ["MC", "MC - Machining"],
-      ["NCL", "NCL - NC Lath."],
-      ["L", "L - Lath."],
-      ["GC", "GC - Grinding"],
-      ["DP", "DP - Throuth Pin"],
-      ["UT", "UT - InductionHarden"],
-      ["F", "F - Buffing"],
-      ["D", "D - Drilling"],
-      ["AS", "AS - Assembly"],
-      ["WE", "WE - Welding"]
-    ],
-    "Magna flux": [
-      ["SEM", "SEM - Magna flux"],
-      ["SEMT", "SEMT - Magna flux"]
-    ],
-    "Sort": [["SEL", "SEL - Sort"]],
-    "Pack": [["KON", "KON - Pack"]],
-    "Rework": [["SELD", "SELD - Sort dimension"]],
-    "Final Inspection": [["K", "K - Final Inspection"]]
-  };
-
-  const statusOptions = {
-    "ผสมผง": ["ผงเหล็ก", "ผงปั่น"],
-    "Compact": ["Green Part", "Quarantine"],
-    "Sinter & Steam": [
-      "รอ Sinter", "Sinter O.K", "Quarantine Sinter",
-      "รอ Steam 1", "Steam 1 OK", "Quarantine Steam 1",
-      "รอ Steam 2", "Steam 2 OK", "Quarantine Steam 2"
-    ],
-    "Finishing": [
-      "รอ Sizing", "Sizing OK", "รอ Rolling", "Rolling OK",
-      "รอ Rumble - Oil - Dry", "รอ Check Crack",
-      "รอ Shot blast", "Shot blast OK", "OK", "Quarantine",
-      "รอ Rumble2", "Quarantine Rumble2"
-    ],
-    "Machining": [
-      "Blank รอM/C", "Blank รอส่ง Sub con", "Blank รอส่ง Steam","Blank รอเจียร","Blank รอชุบแข็ง","Blank ชุบแข็ง OK รอ M/C",
-      "Quarantine", "รอส่ง Sorting", "ชุบแข็ง OK ส่ง Magna"
-    ],
-    "Sub Store": [
-      "Blank Wait for Sub-Con", "งานรอส่ง M/F,Rumble,Steam,Sort G1P",
-      "Quarantine Blank Wait for Sub-Con", "Wait for Sorting",
-      "Quarantine รอส่ง Rework"
-    ],
-    "Sort": [
-      "รอ M/F (Blank Part)", "รอ M/F (Sorting Part)", "M/F OK", "Quarantine M/F",
-      "งานBlank รอ Sort", "รอ Sort", "Quarantine Sort", "งานรอทิ้ง Sort",
-      "รอ Pack", "Pack OK (FG1)", "Re-oil (FG1)"
-    ],
-    "Pack": [
-      "รอ Pack", "Pack OK (FG1)", "Re-oil (FG1)", "Quarantine Pack"
-    ],
-    "Rework": [
-      "Quarantine Compact", "Quarantine Sinter", "Quarantine Steam", "Quarantine Finishing",
-      "Quarantine Machining", "Rework Blank Part", "Rework Sorting Part",
-      "Judgement (Blank part)", "Judgement (Sorting part)",
-      "Scrap Blank Part", "Scrap Sorting Part"
-    ],
-    "Magna flux": [
-      "รอ M/F (Blank Part)", "รอ M/F (Sorting Part)", "M/F OK", "Quarantine M/F"
-    ],
-    // ✅ เพิ่มรายการสถานะสำหรับ Final Inspection
-  "Final Inspection": [
-    "รอตัดสินใจ",
-    "รอ Sort",
-    "รอเคลม Sub"
-  ]
-  };
-
-  // 🔽 Sub Process Handling
-  if (main === "ผสมผง" || main === "Sub Store") {
-    sub.disabled = true;
-    sub.style.backgroundColor = "#e5e7eb";
-    const option = document.createElement("option");
-    option.text = "ไม่มี";
-    sub.appendChild(option);
-  } else if (["Compact", "Sort", "Pack", "Rework", "Final Inspection"].includes(main)) {
-    sub.disabled = false;
-    sub.style.backgroundColor = "#ffffff";
-    const [code, label] = subOptions[main][0];
-    const option = document.createElement("option");
-    option.value = code;
-    option.text = label;
-    sub.appendChild(option);
-  } else if (subOptions[main]) {
-    sub.disabled = false;
-    sub.style.backgroundColor = "#ffffff";
-    const defaultOption = document.createElement("option");
-    defaultOption.text = "-- เลือกกระบวนการย่อย --";
-    defaultOption.value = "";
-    sub.appendChild(defaultOption);
-    subOptions[main].forEach(([code, label]) => {
-      const opt = document.createElement("option");
-      opt.value = code;
-      opt.textContent = label;
-      sub.appendChild(opt);
-    });
-  } else {
-    sub.disabled = true;
-    sub.style.backgroundColor = "#e5e7eb";
-    const fallback = document.createElement("option");
-    fallback.text = "-- ไม่มีข้อมูล --";
-    sub.appendChild(fallback);
+  if (!subValue || !subLabel || statuses.length === 0) {
+    statusSelect.disabled = true;
+    statusSelect.style.backgroundColor = "#e5e7eb";
+    statusSelect.innerHTML = "<option value=''>-- เลือกสถานะ --</option>";
+    handleStatusChange();
+    return;
   }
 
-  // 🔽 Status Handling
-  if (statusOptions[main]) {
+  if (statuses.length === 1) {
+    statusSelect.disabled = true;
+    statusSelect.style.backgroundColor = "#e5e7eb";
+    const option = document.createElement("option");
+    option.value = statuses[0];
+    option.text = statuses[0];
+    statusSelect.appendChild(option);
+  } else {
     statusSelect.disabled = false;
     statusSelect.style.backgroundColor = "#ffffff";
     const defaultOption = document.createElement("option");
     defaultOption.value = "";
     defaultOption.text = "-- เลือกสถานะ --";
     statusSelect.appendChild(defaultOption);
-    statusOptions[main].forEach(status => {
+    statuses.forEach((status) => {
       const option = document.createElement("option");
       option.value = status;
       option.textContent = status;
       statusSelect.appendChild(option);
     });
-  } else {
-    statusSelect.disabled = true;
-    statusSelect.style.backgroundColor = "#e5e7eb";
-    const none = document.createElement("option");
-    none.text = "ไม่มี";
-    statusSelect.appendChild(none);
   }
+
+  handleStatusChange();
+}
+
+function handleMainProcessChange() {
+  const main = document.getElementById("mainProcess").value;
+  const sub = document.getElementById("subProcess");
+  const statusSelect = document.getElementById("status");
+  const newStatusSelect = document.getElementById("newStatus");
+  const fileNameGroup = document.getElementById("fileNameGroup");
+  const fileNameInput = document.getElementById("fileName");
+
+  sub.innerHTML = "";
+  statusSelect.innerHTML = "<option value=''>-- เลือกสถานะ --</option>";
+  statusSelect.disabled = true;
+  statusSelect.style.backgroundColor = "#e5e7eb";
+  newStatusSelect.innerHTML = "<option value=''>-- เลือกสถานะใหม่ --</option>";
+  newStatusSelect.disabled = true;
+  newStatusSelect.style.backgroundColor = "#e5e7eb";
+  fileNameGroup.style.display = "none";
+  fileNameInput.value = "";
+
+  const rows = processRules[main] || [];
+  const subOptions = [...new Map(
+    rows
+      .filter((row) => row.subValue && row.status)
+      .map((row) => [`${row.subValue}__${row.status}`, { value: row.subValue, label: row.status }])
+  ).values()];
+
+  if (subOptions.length === 0) {
+    sub.disabled = true;
+    sub.style.backgroundColor = "#e5e7eb";
+    sub.innerHTML = "<option value=''>-- ไม่มีข้อมูล --</option>";
+    handleStatusChange();
+    return;
+  }
+
+  if (subOptions.length === 1) {
+    sub.disabled = true;
+    sub.style.backgroundColor = "#e5e7eb";
+    const option = document.createElement("option");
+    option.value = subOptions[0].value;
+    option.text = subOptions[0].label;
+    option.dataset.subLabel = subOptions[0].label;
+    sub.appendChild(option);
+  } else {
+    sub.disabled = false;
+    sub.style.backgroundColor = "#ffffff";
+    const defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.text = "-- เลือกกระบวนการย่อย --";
+    sub.appendChild(defaultOption);
+    subOptions.forEach(({ value, label }) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.text = label;
+      option.dataset.subLabel = label;
+      sub.appendChild(option);
+    });
+  }
+
+  handleSubProcessChange();
 }
 </script>
 
 </body>
 </html>
+
