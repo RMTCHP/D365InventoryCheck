@@ -411,7 +411,7 @@
 
   <script>
     const App = (function() {
-      const apiBaseUrl = 'https://script.google.com/macros/s/AKfycbzfAhDGWN0fKzfs6TaLkrMt5eHpLDNhysbh1gOCLt1q5v4NYSr8CQeX7ygiefZAVJQ/exec';
+      const apiBaseUrl = 'https://script.google.com/macros/s/AKfycbzF9NF5RETnWhsxktbM0_zoeCSCppfAAV2KxTU4rja07ip5lkuaOw3iJ5l9oG2wUs4/exec';
       let allFilteredData = [];
       let currentPage = 1;
       const rowsPerPage = 20;
@@ -517,7 +517,16 @@
           return;
         }
 
-        const url = `${apiBaseUrl}?page=getInventory`;
+        const selectedProcess = document.getElementById('mainProcess').value;
+        const barcodeKeyword = document.getElementById('barcodeSearch').value.toLowerCase().trim();
+        const query = new URLSearchParams({
+          page: 'getInventory',
+          startMs: String(startDateObj.getTime()),
+          endMs: String(endDateObj.getTime()),
+          mainProcess: selectedProcess,
+          barcode: barcodeKeyword
+        });
+        const url = `${apiBaseUrl}?${query}`;
 
         const tbody = document.getElementById('tableBody');
         const summaryDiv = document.getElementById('summary');
@@ -532,9 +541,6 @@
           const response = await fetch(url);
           if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
           const data = await response.json();
-
-          const selectedProcess = document.getElementById('mainProcess').value;
-          const barcodeKeyword = document.getElementById('barcodeSearch').value.toLowerCase().trim();
 
           hasSearched = true;
 
