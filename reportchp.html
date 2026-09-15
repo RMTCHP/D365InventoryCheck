@@ -991,7 +991,16 @@
     return;
   }
 
-  const url = 'https://script.google.com/macros/s/AKfycbwioDL_aFmIjEbqHkKZ88jr_Ku32XwlHZVo1PZKRyuHXjlDjXANNEnHuY-hghVFgema/exec?page=getInventory';
+  const selectedProcess = document.getElementById('mainProcess').value;
+  const barcodeKeyword = document.getElementById('barcodeSearch').value.toLowerCase().trim();
+  const query = new URLSearchParams({
+    page: 'getInventory',
+    startMs: String(startDateObj.getTime()),
+    endMs: String(endDateObj.getTime()),
+    mainProcess: selectedProcess,
+    barcode: barcodeKeyword
+  });
+  const url = `https://script.google.com/macros/s/AKfycbxMTlD2V1-zsVua2BZkCdSYhrwwqVtX84FkvPduj8DEI7EwMFYcIRfEjkC8DKj43iOu/exec?${query}`;
 
   const tbody = document.getElementById('tableBody');
   const summaryDiv = document.getElementById('summary');
@@ -1006,9 +1015,6 @@
     const response = await fetch(url);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
-
-    const selectedProcess = document.getElementById('mainProcess').value;
-    const barcodeKeyword = document.getElementById('barcodeSearch').value.toLowerCase().trim();
 
     hasSearched = true;
 
