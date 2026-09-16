@@ -464,7 +464,7 @@
   <audio id="beep" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" preload="auto"></audio>
 
   <script>
-  const apiURL = "https://script.google.com/macros/s/AKfycbyagnEzBqWZdsYM3YkYe2vAxUqWtgfh4CMz1pgBfRBMC6ZM9j9rs3M36NS0GmF2YsI/exec";
+  const apiURL = "https://script.google.com/macros/s/AKfycbymzu0F1zfHpHYxUpfdJbNl5i4m16BjMmvApVhWR3xrWPaAaWF56nUV9psbc19SwP4/exec";
   let codeReader;
   let submitInProgress = false;
   let pendingSubmission = null;
@@ -549,6 +549,11 @@ function extractSubProcessFromBarcode(barcode) {
 
   // Expected barcode format: PRD.../<quantity>/<sub-process>/<tag-no>/
   return /^PRD/i.test(parts[0] || '') && parts.length >= 3 ? parts[2] : '';
+}
+
+function isValidInventoryBarcode(barcode) {
+  const parts = String(barcode || '').trim().split('/').map(x => x.trim()).filter(Boolean);
+  return /^PRD/i.test(parts[0] || '') && parts.length >= 4;
 }
 
 function resolveSubProcess(mainProcess, barcode, selectedSubProcess) {
@@ -750,6 +755,15 @@ function handleStatusChange() {
      || "ไม่มี")
   : newStatusEl.value.trim();
   const requiresFileName = status.includes("ผงปั่น");
+
+  if (!isValidInventoryBarcode(barcode)) {
+    Swal.fire({
+      icon: "error",
+      title: "Barcode ไม่ถูกต้อง",
+      text: "กรุณาสแกน QR Code ใหม่ ต้องเป็นรูปแบบ PRD.../<จำนวน>/<กระบวนการ>/<Tag>/"
+    });
+    return;
+  }
 
   // ✅ ตรวจเฉพาะ field ที่ต้องไม่ว่างจริง ๆ
   if (!barcode || !quantity || !scanner || !mainProcess || !subProcess || !status || !newStatus) {
