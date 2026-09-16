@@ -423,7 +423,7 @@
         <label class="form-label">ชื่อผู้สแกน</label>
         <input type="text" id="scanner" class="form-control" placeholder="ชื่อผู้สแกน">
       </div>
-      <button class="btn-primary" onclick="submitBarcode()" style="font-size:18px;">💾 บันทึกข้อมูล</button>
+      <button id="submitButton" class="btn-primary" onclick="submitBarcode()" style="font-size:18px;">💾 บันทึกข้อมูล</button>
       <p style="text-align:center; margin-top: 12px; font-size: 12px; color: #64748b;">
   © 2025 Resonac Materials (Thailand) Co., Ltd.
 </p>
@@ -464,8 +464,67 @@
   <audio id="beep" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" preload="auto"></audio>
 
   <script>
-  const apiURL = "https://script.google.com/macros/s/AKfycbzDMm6alJAwXtt0MxFwH4IV2B0uXk58Eh4C1tyggIGwVWgqZfXm6n_73wVEyId4K6A/exec";
+  const apiURL = "https://script.google.com/macros/s/AKfycbyagnEzBqWZdsYM3YkYe2vAxUqWtgfh4CMz1pgBfRBMC6ZM9j9rs3M36NS0GmF2YsI/exec";
   let codeReader;
+  let submitInProgress = false;
+  let pendingSubmission = null;
+
+function createRequestId() {
+  if (window.crypto && typeof window.crypto.randomUUID === "function") {
+    return window.crypto.randomUUID();
+  }
+  return "req-" + Date.now() + "-" + Math.random().toString(36).slice(2);
+}
+
+function setSubmitBusy(isBusy) {
+  const button = document.getElementById("submitButton");
+  if (!button) return;
+  button.disabled = isBusy;
+  button.style.opacity = isBusy ? "0.7" : "";
+  button.style.cursor = isBusy ? "wait" : "";
+}
+
+function resetSubmissionForm() {
+  document.getElementById("barcode").value = "";
+  updateTagNoUI("");
+  document.getElementById("quantity").value = "";
+  document.getElementById("mainProcess").value = "";
+  document.getElementById("subProcess").innerHTML = "<option value=''>-- เลือกกระบวนการย่อย --</option>";
+  document.getElementById("subProcess").disabled = true;
+  document.getElementById("status").innerHTML = "<option value=''>-- เลือกสถานะ --</option>";
+  document.getElementById("status").disabled = true;
+  document.getElementById("newStatus").innerHTML = "<option value=''>-- เลือกสถานะใหม่ --</option>";
+  document.getElementById("newStatus").disabled = true;
+  document.getElementById("fileName").value = "";
+  document.getElementById("fileNameGroup").style.display = "none";
+}
+
+function finishSubmission(isDuplicate) {
+  pendingSubmission = null;
+  resetSubmissionForm();
+  Swal.fire({
+    icon: "success",
+    title: isDuplicate ? "รายการนี้บันทึกแล้ว" : "บันทึกสำเร็จ",
+    timer: 2000,
+    showConfirmButton: false
+  });
+}
+
+async function confirmSubmissionSaved(requestId) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      const query = new URLSearchParams({ page: "getSubmissionStatus", requestId });
+      const response = await fetch(`${apiURL}?${query}`);
+      if (!response.ok) continue;
+      const result = await response.json();
+      if (result.success && result.found) return true;
+    } catch (error) {
+      console.warn("Unable to verify submission status", error);
+    }
+  }
+  return false;
+}
 
 function extractTagNoFromQrText(qrText) {
   const s = String(qrText || '').trim();
@@ -758,61 +817,53 @@ function handleStatusChange() {
     cancelButtonText: "❌ ยกเลิก",
   });
 
-  if (!confirmResult.isConfirmed) return;
+  if (!confirmResult.isConfirmed || submitInProgress) return;
 
-  // ✅ แสดง loading ขณะส่งข้อมูล
+  const payloadFingerprint = JSON.stringify({ barcode, quantity, scanner, mainProcess, subProcess, status, fileName });
+  if (!pendingSubmission || pendingSubmission.fingerprint !== payloadFingerprint) {
+    pendingSubmission = { id: createRequestId(), fingerprint: payloadFingerprint };
+  }
+  const requestId = pendingSubmission.id;
+  submitInProgress = true;
+  setSubmitBusy(true);
+
   Swal.fire({
     title: "กำลังบันทึกข้อมูล...",
+    text: "กรุณารอสักครู่ ระบบจะตรวจสอบผลการบันทึกให้อัตโนมัติ",
     allowOutsideClick: false,
-    didOpen: () => {
-      Swal.showLoading();
-    },
+    allowEscapeKey: false,
+    didOpen: () => Swal.showLoading()
   });
 
   try {
-    const res = await fetch(`${apiURL}?page=submitBarcode&barcode=${barcode}&quantity=${quantity}&scanner=${scanner}&mainProcess=${mainProcess}&subProcess=${subProcess}&status=${status}&fileName=${fileName}`, {
-      method: "POST"
+    const query = new URLSearchParams({
+      page: "submitBarcode", barcode, quantity, scanner, mainProcess, subProcess, status, fileName, requestId
     });
+    const res = await fetch(`${apiURL}?${query}`, { method: "POST" });
+    if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
     const data = await res.json();
 
     if (data.success) {
-      Swal.fire({
-        icon: "success",
-        title: "✅ บันทึกสำเร็จ",
-        timer: 2000,
-        showConfirmButton: false,
-      });
-
-      // ✅ รีเซ็ตฟอร์ม
-      document.getElementById("barcode").value = "";
-      updateTagNoUI(''); // ✅ เพิ่มบรรทัดนี้
-      document.getElementById("quantity").value = "";
-      document.getElementById("mainProcess").value = "";
-
-      document.getElementById("subProcess").innerHTML = "<option value=''>-- เลือกกระบวนการย่อย --</option>";
-      document.getElementById("subProcess").disabled = true;
-
-      document.getElementById("status").innerHTML = "<option value=''>-- เลือกสถานะ --</option>";
-      document.getElementById("status").disabled = true;
-      document.getElementById("newStatus").innerHTML = "<option value=''>-- เลือกสถานะใหม่ --</option>";
-      document.getElementById("newStatus").disabled = true;
-      document.getElementById("fileName").value = "";
-      document.getElementById("fileNameGroup").style.display = "none";
-
+      finishSubmission(Boolean(data.duplicate));
     } else {
-      Swal.fire({
-        icon: "error",
-        title: "เกิดข้อผิดพลาด",
-        text: data.message,
-      });
+      pendingSubmission = null;
+      Swal.fire({ icon: "error", title: "เกิดข้อผิดพลาด", text: data.message || "ไม่สามารถบันทึกข้อมูลได้" });
     }
   } catch (err) {
-    Swal.fire({
-      icon: "error",
-      title: "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์",
-      text: "กรุณาลองใหม่อีกครั้ง",
-    });
+    const wasSaved = await confirmSubmissionSaved(requestId);
+    if (wasSaved) {
+      finishSubmission(true);
+    } else {
+      Swal.fire({
+        icon: "warning",
+        title: "กำลังตรวจสอบสถานะการบันทึก",
+        text: "ระบบยังยืนยันผลไม่ได้ กรุณากดบันทึกอีกครั้งโดยใช้ข้อมูลเดิม ระบบจะไม่บันทึกซ้ำ"
+      });
+    }
     console.error(err);
+  } finally {
+    submitInProgress = false;
+    setSubmitBusy(false);
   }
 }
 
