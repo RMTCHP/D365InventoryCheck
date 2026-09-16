@@ -463,7 +463,7 @@
   <audio id="beep" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" preload="auto"></audio>
 
   <script>
-  const apiURL = "https://script.google.com/macros/s/AKfycbxMTlD2V1-zsVua2BZkCdSYhrwwqVtX84FkvPduj8DEI7EwMFYcIRfEjkC8DKj43iOu/exec";
+  const apiURL = "https://script.google.com/macros/s/AKfycbyGEcpxqnHiCr57TZN9j7ZrVsw75oDwb99wQvge8VzjPYCxR89YcNN4DAP0hS4mji5O/exec";
   let codeReader;
 
 function extractTagNoFromQrText(qrText) {
@@ -482,6 +482,20 @@ function extractTagNoFromQrText(qrText) {
 
   // âœ… à¸–à¹‰à¸²à¹„à¸¡à¹ˆà¸¡à¸µ MW6 Demo -> à¹€à¸­à¸²à¸à¸¥à¸¸à¹ˆà¸¡à¸ªà¸¸à¸”à¸—à¹‰à¸²à¸¢
   return parts[parts.length - 1];
+}
+
+function extractSubProcessFromBarcode(barcode) {
+  const parts = String(barcode || '').trim().split('/').map(x => x.trim()).filter(Boolean);
+
+  // Expected barcode format: PRD.../<quantity>/<sub-process>/<tag-no>/
+  return /^PRD/i.test(parts[0] || '') && parts.length >= 3 ? parts[2] : '';
+}
+
+function resolveSubProcess(mainProcess, barcode, selectedSubProcess) {
+  const main = String(mainProcess || '').trim();
+  return main === 'ผสมผง' || main === 'FG'
+    ? String(selectedSubProcess || '').trim()
+    : extractSubProcessFromBarcode(barcode);
 }
 
 
@@ -661,8 +675,8 @@ function handleStatusChange() {
   const newStatusEl = document.getElementById("newStatus");
   const fileName = document.getElementById("fileName").value.trim();
 
-  // ✅ หาก dropdown ถูก disable ให้ส่ง "ไม่มี"
-  const subProcess = subProcessEl.value.trim();
+  // Powder mixing and FG retain the selected sub-process; other processes use Barcode.
+  const subProcess = resolveSubProcess(mainProcess, barcode, subProcessEl.value);
   const status = statusEl.disabled
   ? (statusEl.options[statusEl.selectedIndex]?.value
      || statusEl.options[0]?.value
@@ -682,7 +696,9 @@ function handleStatusChange() {
     Swal.fire({
       icon: "error",
       title: "กรอกข้อมูลไม่ครบ",
-      text: "กรุณากรอกข้อมูลให้ครบทุกช่อง",
+      text: !subProcess
+        ? "ไม่พบรหัสกระบวนการย่อยใน Barcode กรุณาตรวจสอบรูปแบบ Barcode"
+        : "กรุณากรอกข้อมูลให้ครบทุกช่อง",
     });
     return;
   }
@@ -707,7 +723,9 @@ function handleStatusChange() {
   }
 
   // ✅ แสดงข้อมูลสำหรับยืนยัน
-  const subProcessText = subProcessEl.options[subProcessEl.selectedIndex]?.textContent || subProcess;
+  const subProcessText = (mainProcess === 'ผสมผง' || mainProcess === 'FG')
+    ? (subProcessEl.options[subProcessEl.selectedIndex]?.textContent || subProcess)
+    : subProcess;
   const statusText = statusEl.options[statusEl.selectedIndex]?.textContent || status;
   const newStatusText = newStatusEl.options[newStatusEl.selectedIndex]?.textContent || newStatus;
   const mainProcessText = mainProcess || "-";
