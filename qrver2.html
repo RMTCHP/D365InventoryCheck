@@ -463,7 +463,7 @@
   <audio id="beep" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" preload="auto"></audio>
 
   <script>
-  const apiURL = "https://script.google.com/macros/s/AKfycbzEvhN8tqddpb8M94Fw60EK5GJP0nSa_TZJZBVDp47lghjxUbQS1qEDVyv45i7V7nPx/exec";
+  const apiURL = "https://script.google.com/macros/s/AKfycbw8xG0nSudSb3FmlepVcGTfI-_Q4Kz03-YkEjpFQCmzouSeq1WTJ9w-nlL-1NWhDYPj/exec";
   let codeReader;
   let submitInProgress = false;
   let pendingSubmission = null;
@@ -546,13 +546,12 @@ function extractTagNoFromQrText(qrText) {
 function extractSubProcessFromBarcode(barcode) {
   const parts = String(barcode || '').trim().split('/').map(x => x.trim()).filter(Boolean);
 
-  // Expected barcode format: PRD.../<quantity>/<sub-process>/<tag-no>/
-  return /^PRD/i.test(parts[0] || '') && parts.length >= 3 ? parts[2] : '';
+  return parts.length >= 3 ? parts[2] : '';
 }
 
 function isValidInventoryBarcode(barcode) {
-  const parts = String(barcode || '').trim().split('/').map(x => x.trim()).filter(Boolean);
-  return /^PRD/i.test(parts[0] || '') && parts.length >= 4;
+  const value = String(barcode || '').trim();
+  return Boolean(value) && !/^\d+$/.test(value);
 }
 
 function resolveSubProcess(mainProcess, barcode, selectedSubProcess) {
@@ -759,7 +758,7 @@ function handleStatusChange() {
     Swal.fire({
       icon: "error",
       title: "Barcode ไม่ถูกต้อง",
-      text: "กรุณาสแกน QR Code ใหม่ ต้องเป็นรูปแบบ PRD.../<จำนวน>/<กระบวนการ>/<Tag>/"
+      text: "ไม่สามารถบันทึก Barcode ที่เป็นตัวเลขล้วน กรุณาสแกน QR Code ใหม่"
     });
     return;
   }
